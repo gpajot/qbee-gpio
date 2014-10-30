@@ -1,7 +1,7 @@
 QBee gpio controller
 ===========
 
-A python script to control an LCD display and relay for use in an AirPlay and/or MPD Raspberry Pi server.
+A python script to control an LCD display and relay for use in an AirPlay and/or MPD Raspberry Pi server. Check here for more information on the project: [http://www.instructables.com/id/QBee-AirPlay-MPD-integrated-speaker-Raspberry-Pi-s](http://www.instructables.com/id/QBee-AirPlay-MPD-integrated-speaker-Raspberry-Pi-s).
 
 ## Dependencies
 
