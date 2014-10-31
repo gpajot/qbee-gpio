@@ -241,7 +241,7 @@ class AmpController(object):
 
         get_temp_cmd = subprocess.Popen(self.TEMP_CMD,
                                         shell=True, stdout=subprocess.PIPE)
-        temp = int(get_temp_cmd.stdout.readlines()) / 1000
+        temp = int(get_temp_cmd.stdout.readlines()[0]) / 1000
         if temp >= TEMP_THRESHOLD and not self.state:
             log('warning', 'high temperature: ' + temp)
             self.power(True)
