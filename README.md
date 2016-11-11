@@ -8,8 +8,7 @@ A python script to control an LCD display and relay for use in an AirPlay and/or
 * Pyinotify: [http://github.com/seb-m/pyinotify](http://github.com/seb-m/pyinotify)
 
 Optional:
-* Shairport (AirPlay): [https://github.com/abrasive/shairport](https://github.com/abrasive/shairport)
-* Music Player Daemon: [http://www.musicpd.org](http://www.musicpd.org)
+* https://github.com/mikebrady/shairport-sync
 * Or any other music player
 
 ## Features
