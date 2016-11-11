@@ -195,6 +195,7 @@ class AmpController(object):
 
         # Initiate a new thread and start it.
         self.thread = threading.Thread(target=self.run)
+        self.thread.daemon = True
         self.thread.start()
 
     def run(self):
@@ -233,6 +234,7 @@ class AmpController(object):
         """
 
         self.temperature_thread = threading.Thread(target=self._run_temp_monitor)
+        self.temperature_thread.daemon = True
         self.temperature_thread.start()
         log('info', 'starting temperature monitoring thread')
 
@@ -250,8 +252,7 @@ class AmpController(object):
         Check the temperature.
         """
 
-        get_temp_cmd = subprocess.Popen(self.TEMP_CMD,
-                                        shell=True, stdout=subprocess.PIPE)
+        get_temp_cmd = subprocess.Popen(self.TEMP_CMD, shell=True, stdout=subprocess.PIPE)
         temp = int(get_temp_cmd.stdout.readlines()[0]) / 1000
         if temp >= TEMP_THRESHOLD and not self.state:
             log('warning', 'high temperature: {:d}'.format(temp))
@@ -409,6 +410,7 @@ class DisplayThreadAirplay(threading.Thread):
         self.last_lines = last_lines
 
         self.event = threading.Event()
+        self.daemon = True
 
         # Fifo poll init.
         self.poll = select.poll()
@@ -436,7 +438,7 @@ class DisplayThreadAirplay(threading.Thread):
             last_events = self.poll.poll(self.POLL_TIMEOUT)
             if last_events:
                 log('debug', 'got %i events' % len(last_events))
-                info += os.read(last_events[0][0], len(last_events))
+                info += os.read(last_events[0][0], 2048)
 
         if not self.event.is_set() and info:
             self._parse_info(info)
