@@ -1,0 +1,38 @@
+[tool.poetry]
+name = "qbee-gpio"
+version = "0.1.0"
+description = "Control an LCD display and amplifier relay for use in an AirPlay Raspberry Pi server."
+authors = ["Gabriel Pajot <gab@les-cactus.co>"]
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/gpajot/qbee-gpio"
+include = ["qbee_gpio/py.typed"]
+
+[tool.poetry.dependencies]
+python = ">=3.8"
+
+asyncinotify = { version = ">=4.0,<4.1", python = "<4" }
+
+[tool.poetry.group.test.dependencies]
+pytest = "==8.0.0"
+pytest-mock = "==3.12.0"
+ruff = "==0.2.1"
+mypy = "==1.8.0"
+pre-commit = "==3.5.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.mypy]
+ignore_missing_imports = true
+install_types = true
+non_interactive = true
+check_untyped_defs = true
+
+[tool.ruff.lint]
+select = ["A", "B", "E", "F", "I", "PT"]
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
