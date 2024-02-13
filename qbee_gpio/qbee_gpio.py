@@ -19,19 +19,20 @@ CONFIGURATION VARIABLES:
 :date: 2014-04-18
 """
 
-import os
-import sys
 import base64
-import RPi.GPIO as GPIO
-import time
-import subprocess
-import re
-import threading
-import pyinotify
-import unicodedata
-import select
-import logging
 import functools
+import logging
+import os
+import re
+import select
+import subprocess
+import sys
+import threading
+import time
+import unicodedata
+
+import pyinotify
+import RPi.GPIO as GPIO
 
 # GPIO pin configuration (BCM).
 AMP_POWER_PIN = 4
@@ -52,15 +53,13 @@ TEMP_DELAY = 60 * 60
 TEMP_THRESHOLD = 60
 
 # Variables allowing to fetch information from sound output use.
-SOUND_PROCESSES = {
-    'airplay': 'shairport'
-}
+SOUND_PROCESSES = {"airplay": "shairport"}
 
 # Sound driver path.
-SOUND_DRIVER_PATH = '/dev/snd/pcmC0D0p'
+SOUND_DRIVER_PATH = "/dev/snd/pcmC0D0p"
 
 # AirPlay fifo path.
-AIRPLAY_FIFO_PATH = '/var/lib/shairport/now_playing'
+AIRPLAY_FIFO_PATH = "/var/lib/shairport/now_playing"
 
 # Initiate logger, DEBUG is used for pins, INFO for verbose logging and WARNING for important messages.
 logger = None
@@ -70,14 +69,16 @@ LOGGER_LEVEL = logging.WARNING
 def initiate_logger():
     global logger
     level = LOGGER_LEVEL
-    if '--debug' in sys.argv[1:]:
+    if "--debug" in sys.argv[1:]:
         level = logging.DEBUG
-    elif '--info' in sys.argv[1:]:
+    elif "--info" in sys.argv[1:]:
         level = logging.INFO
-    logger = logging.getLogger('qbee_gpio')
+    logger = logging.getLogger("qbee_gpio")
     logger.setLevel(level)
     handler = logging.StreamHandler()
-    handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)-5.5s [%(name)s] %(message)s"))
+    handler.setFormatter(
+        logging.Formatter("%(asctime)s %(levelname)-5.5s [%(name)s] %(message)s")
+    )
     logger.addHandler(handler)
 
 
@@ -86,7 +87,7 @@ def log(level, *args):
     Used for printing information on the logger while debugging.
     """
 
-    getattr(logger, level)(' '.join(map(unicode, args)))
+    getattr(logger, level)(" ".join(map(unicode, args)))
 
 
 def dec_busy(func):
@@ -142,8 +143,11 @@ def strip_accents(s):
     Remove accents from unicode strings.
     """
 
-    return ''.join(c for c in unicodedata.normalize('NFD', unicode(s, 'utf-8', errors='ignore'))
-                   if unicodedata.category(c) != 'Mn')
+    return "".join(
+        c
+        for c in unicodedata.normalize("NFD", unicode(s, "utf-8", errors="ignore"))
+        if unicodedata.category(c) != "Mn"
+    )
 
 
 def pin_output(pin, state):
@@ -152,7 +156,7 @@ def pin_output(pin, state):
     """
 
     GPIO.output(pin, state)
-    log('debug', 'pin ',  pin, ', state ', state)
+    log("debug", "pin ", pin, ", state ", state)
 
 
 class AmpController(object):
@@ -160,10 +164,9 @@ class AmpController(object):
     Custom timer function used to control the power of the amp.
     """
 
-    TEMP_CMD = 'cat /sys/class/thermal/thermal_zone0/temp'
+    TEMP_CMD = "cat /sys/class/thermal/thermal_zone0/temp"
 
     def __init__(self, func):
-
         self.event = threading.Event()
         # Function used to power off amp and LCD.
         self.func = func
@@ -183,9 +186,8 @@ class AmpController(object):
 
     @dec_busy
     def power(self, state):
-
         pin_output(AMP_POWER_PIN, state)
-        log('info', 'Amp power:', state)
+        log("info", "Amp power:", state)
         self.state = state
 
     def start(self):
@@ -236,7 +238,7 @@ class AmpController(object):
         self.temperature_thread = threading.Thread(target=self._run_temp_monitor)
         self.temperature_thread.daemon = True
         self.temperature_thread.start()
-        log('info', 'starting temperature monitoring thread')
+        log("info", "starting temperature monitoring thread")
 
     def _run_temp_monitor(self):
         """
@@ -252,10 +254,12 @@ class AmpController(object):
         Check the temperature.
         """
 
-        get_temp_cmd = subprocess.Popen(self.TEMP_CMD, shell=True, stdout=subprocess.PIPE)
+        get_temp_cmd = subprocess.Popen(
+            self.TEMP_CMD, shell=True, stdout=subprocess.PIPE
+        )
         temp = int(get_temp_cmd.stdout.readlines()[0]) / 1000
         if temp >= TEMP_THRESHOLD and not self.state:
-            log('warning', 'high temperature: {:d}'.format(temp))
+            log("warning", "high temperature: {:d}".format(temp))
             self.power(True)
             self.start()
         elif not self.state:
@@ -274,22 +278,21 @@ class LCDController(object):
     LCD_LINES = (0x80, 0xC0)
 
     # Timing constants.
-    E_PULSE_CHR = .000001
-    E_DELAY_CHR = .000001
+    E_PULSE_CHR = 0.000001
+    E_DELAY_CHR = 0.000001
     # Delays must be longer for commands.
-    E_PULSE_CMD = .001
-    E_DELAY_CMD = .001
+    E_PULSE_CMD = 0.001
+    E_DELAY_CMD = 0.001
 
     # LCD mode, command or character byte.
     LCD_CHR = True
     LCD_CMD = False
 
     # Variables defining how long to wait before power comes up.
-    POWER_WAIT_TIME = .005
+    POWER_WAIT_TIME = 0.005
     POWER_TRIES = 1000
 
     def __init__(self):
-
         # Power state of the LCD.
         self.state = False
         # Whether the LCD controler is currently busy.
@@ -297,7 +300,15 @@ class LCDController(object):
         # Currently displayed lines.
         self.lines = None
 
-        for pin in (LCD_POWER_PIN, LCD_E_PIN, LCD_RS_PIN, LCD_D4_PIN, LCD_D5_PIN, LCD_D6_PIN, LCD_D7_PIN):
+        for pin in (
+            LCD_POWER_PIN,
+            LCD_E_PIN,
+            LCD_RS_PIN,
+            LCD_D4_PIN,
+            LCD_D5_PIN,
+            LCD_D6_PIN,
+            LCD_D7_PIN,
+        ):
             GPIO.setup(pin, GPIO.OUT)
             pin_output(pin, False)
 
@@ -308,7 +319,7 @@ class LCDController(object):
         """
 
         pin_output(LCD_POWER_PIN, state)
-        log('info', 'LCD power:', state)
+        log("info", "LCD power:", state)
         self.state = state
         if not state:
             self.lines = None
@@ -330,15 +341,15 @@ class LCDController(object):
     @dec_busy
     @dec_check_lines
     @dec_check_power
-    def lcd_send_string(self, line1='', line2=''):
+    def lcd_send_string(self, line1="", line2=""):
         """
         Display a message on the LCD.
         """
 
-        line1 = strip_accents(line1.strip()[:self.LCD_WIDTH]).center(self.LCD_WIDTH)
-        line2 = strip_accents(line2.strip()[:self.LCD_WIDTH]).center(self.LCD_WIDTH)
+        line1 = strip_accents(line1.strip()[: self.LCD_WIDTH]).center(self.LCD_WIDTH)
+        line2 = strip_accents(line2.strip()[: self.LCD_WIDTH]).center(self.LCD_WIDTH)
 
-        log('info', 'Display string:', line1, line2)
+        log("info", "Display string:", line1, line2)
         for idx, line in enumerate((line1, line2)):
             self._lcd_send_byte(self.LCD_LINES[idx], self.LCD_CMD)
             for letter in line:
@@ -365,7 +376,12 @@ class LCDController(object):
             pin_output(LCD_RS_PIN, mode)
 
         # High bits.
-        for pin, bit in ((LCD_D4_PIN, 0x10), (LCD_D5_PIN, 0x20), (LCD_D6_PIN, 0x40), (LCD_D7_PIN, 0x80)):
+        for pin, bit in (
+            (LCD_D4_PIN, 0x10),
+            (LCD_D5_PIN, 0x20),
+            (LCD_D6_PIN, 0x40),
+            (LCD_D7_PIN, 0x80),
+        ):
             if bits & bit == bit:
                 pin_output(pin, True)
 
@@ -373,7 +389,12 @@ class LCDController(object):
         self._reset_data_pins()
 
         # Low bits.
-        for pin, bit in ((LCD_D4_PIN, 0x01), (LCD_D5_PIN, 0x02), (LCD_D6_PIN, 0x04), (LCD_D7_PIN, 0x08)):
+        for pin, bit in (
+            (LCD_D4_PIN, 0x01),
+            (LCD_D5_PIN, 0x02),
+            (LCD_D6_PIN, 0x04),
+            (LCD_D7_PIN, 0x08),
+        ):
             if bits & bit == bit:
                 pin_output(pin, True)
 
@@ -394,13 +415,13 @@ class DisplayThreadAirplay(threading.Thread):
 
     # Regex for info parsing.
     RE_INFO = re.compile(
-        '<type>636f7265</type><code>61736172</code>'
-        '.*?'
-        '<data encoding=\"base64\">(.*?)</data>'  # Artist info
-        '.*?'
-        '<type>636f7265</type><code>6d696e6d</code>'
-        '.*?'
-        '<data encoding=\"base64\">(.*?)</data>'  # Song info
+        "<type>636f7265</type><code>61736172</code>"
+        ".*?"
+        '<data encoding="base64">(.*?)</data>'  # Artist info
+        ".*?"
+        "<type>636f7265</type><code>6d696e6d</code>"
+        ".*?"
+        '<data encoding="base64">(.*?)</data>'  # Song info
     )
 
     def __init__(self, func, last_lines, *args, **kwargs):
@@ -423,7 +444,7 @@ class DisplayThreadAirplay(threading.Thread):
         """
         Loop while thread is active.
         """
-        log('info', 'Starting AirPlay display thread')
+        log("info", "Starting AirPlay display thread")
         while not self.event.is_set():
             self._read_info()
 
@@ -432,12 +453,12 @@ class DisplayThreadAirplay(threading.Thread):
         Read the info from fifo.
         """
 
-        info = ''
+        info = ""
         last_events = None
         while not self.event.is_set() and (last_events is None or last_events):
             last_events = self.poll.poll(self.POLL_TIMEOUT)
             if last_events:
-                log('debug', 'got %i events' % len(last_events))
+                log("debug", "got %i events" % len(last_events))
                 info += os.read(last_events[0][0], 2048)
 
         if not self.event.is_set() and info:
@@ -448,8 +469,8 @@ class DisplayThreadAirplay(threading.Thread):
         Parse current info and call func.
         """
 
-        log('debug', 'Parsing song info: %s' % info)
-        m = self.RE_INFO.findall(info.replace('\n', ''))
+        log("debug", "Parsing song info: %s" % info)
+        m = self.RE_INFO.findall(info.replace("\n", ""))
         if m:
             lines = list(map(base64.b64decode, m[0]))
             self.func(lines)
@@ -459,7 +480,7 @@ class DisplayThreadAirplay(threading.Thread):
         """
         Stop the thread.
         """
-        log('info', 'Stopping AirPlay display thread')
+        log("info", "Stopping AirPlay display thread")
         self.event.set()
 
 
@@ -469,15 +490,13 @@ class SoundEventHandler(pyinotify.ProcessEvent):
     """
 
     # How long to wait between different busy checks.
-    BUSY_WAIT_TIME = .005
+    BUSY_WAIT_TIME = 0.005
 
     # Get sound process command.
-    SOUND_PROCESS_CMD = 'lsof %s' % SOUND_DRIVER_PATH
+    SOUND_PROCESS_CMD = "lsof %s" % SOUND_DRIVER_PATH
 
     # Protocol display treads.
-    DISPLAY_THREADS = {
-        'airplay': DisplayThreadAirplay
-    }
+    DISPLAY_THREADS = {"airplay": DisplayThreadAirplay}
 
     def __init__(self, *args, **kwargs):
         """
@@ -501,13 +520,9 @@ class SoundEventHandler(pyinotify.ProcessEvent):
         self.protocol = None
 
         # The display threads. These will get the song info and display them.
-        self.display_threads = {
-            'airplay': None
-        }
+        self.display_threads = {"airplay": None}
         # Hold the last lines displayed or the initial default.
-        self.last_lines = {
-            'airplay': ['AirPlay', '']
-        }
+        self.last_lines = {"airplay": ["AirPlay", ""]}
 
     def loop(self):
         """
@@ -521,7 +536,9 @@ class SoundEventHandler(pyinotify.ProcessEvent):
         Get the list of running sound processes.
         """
 
-        get_sound_cmd = subprocess.Popen(self.SOUND_PROCESS_CMD, shell=True, stdout=subprocess.PIPE)
+        get_sound_cmd = subprocess.Popen(
+            self.SOUND_PROCESS_CMD, shell=True, stdout=subprocess.PIPE
+        )
         sound_process_lines = get_sound_cmd.stdout.readlines()
 
         found_protocol = None
@@ -541,7 +558,7 @@ class SoundEventHandler(pyinotify.ProcessEvent):
         """
 
         if lines is None:
-            lines = ['', '']
+            lines = ["", ""]
 
         while self.lcd_controller.busy:
             time.sleep(self.BUSY_WAIT_TIME)
@@ -560,11 +577,15 @@ class SoundEventHandler(pyinotify.ProcessEvent):
         Stop the display threads if running.
         """
 
-        threads = self.display_threads if keep is None else {
-            protocol: self.display_threads[protocol]
-            for protocol in self.display_threads.iterkeys()
-            if protocol != keep
-        }
+        threads = (
+            self.display_threads
+            if keep is None
+            else {
+                protocol: self.display_threads[protocol]
+                for protocol in self.display_threads.iterkeys()
+                if protocol != keep
+            }
+        )
         for protocol, thread in threads.iteritems():
             if thread is not None:
                 self.last_lines[protocol] = thread.last_lines
@@ -599,10 +620,9 @@ class SoundEventHandler(pyinotify.ProcessEvent):
                 last_lines = self.last_lines[self.protocol]
                 # Display the last lines initially.
                 self.display_lines(last_lines)
-                self.display_threads[self.protocol] = self.DISPLAY_THREADS[self.protocol](
-                    func=self.display_lines,
-                    last_lines=last_lines
-                )
+                self.display_threads[self.protocol] = self.DISPLAY_THREADS[
+                    self.protocol
+                ](func=self.display_lines, last_lines=last_lines)
         else:
             # Stop display threads if running, start the turn off timer for the amp and clear the LCD.
             self._stop_display_threads()
@@ -614,15 +634,15 @@ class SoundEventHandler(pyinotify.ProcessEvent):
         Stop the process event and cleanup.
         """
 
-        log('info', 'stopping all threads and cleaning up')
+        log("info", "stopping all threads and cleaning up")
         self._stop_display_threads()
         self.amp_controller.stop()
         GPIO.cleanup()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     initiate_logger()
-    log('info', 'starting script')
+    log("info", "starting script")
 
     sound_event_handler = SoundEventHandler()
 
