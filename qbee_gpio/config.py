@@ -8,7 +8,9 @@ import zenconfig
 
 @attrs.define
 class LCDConfig:
+    # Change this to `False` to disable LCD.
     enable: bool = True
+    # Size.
     width: int = 16
     lines: Literal[1, 2, 4] = 2
     # GPIO PIN configuration (BCM mode).
@@ -28,18 +30,26 @@ class LCDConfig:
 
 @attrs.define
 class SoundDetectionConfig:
+    # Change this to `True` to disable sound detection.
     enable: bool = True
+    # We'll watch OPEN and CLOSE_WRITE events to detect sound output.
     driver_path: Path = attrs.field(
         default=Path("/dev/snd/pcmC0D0p"),
         converter=Path,
     )
+    # Command to check if something is currently playing.
+    # We'll consider that something is playing if the command outputs something in stdout.
+    # The default command will work if:
+    #   - `$_USER_ $_HOST_ = (root) NOPASWD: /usr/bin/fuser` has been added to sudoers
+    #   - or the user is root
+    currently_in_use_command: Optional[str] = "sudo fuser /dev/snd/pcmC0D0p"
     # Number of seconds to keep amp on after sound has stopped.
     standby_duration: Optional[float] = 600
     # Change this as needed or set to None to disable shutdown after standby.
-    # The default command will work if
+    # The `sudo shutdown -h now` command will work if:
     #   - `$_USER_ $_HOST_ = (root) NOPASWD: /usr/sbin/shutdown` has been added to sudoers
     #   - or the user is root
-    shutdown_command: Optional[str] = "sudo shutdown -h now"
+    shutdown_command: Optional[str] = None
     # GPIO PIN configuration (BCM mode).
     pin_amp_power: int = 4
 
