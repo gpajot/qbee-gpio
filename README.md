@@ -1,6 +1,6 @@
 # qbee-gpio
 
-[![tests](https://github.com/gpajot/qbee-gpio/workflows/Test/badge.svg?branch=main&event=push)](https://github.com/gpajot/qbee-gpio/actions?query=workflow%3ATest+branch%3Amain+event%3Apush)
+[![tests](https://github.com/gpajot/qbee-gpio/actions/workflows/test.yml/badge.svg?branch=main&event=push)](https://github.com/gpajot/qbee-gpio/actions/workflows/test.yml?query=branch%3Amain+event%3Apush)
 [![version](https://img.shields.io/pypi/v/qbee-gpio?label=stable)](https://pypi.org/project/qbee-gpio/)
 [![python](https://img.shields.io/pypi/pyversions/qbee-gpio)](https://pypi.org/project/qbee-gpio/)
 
