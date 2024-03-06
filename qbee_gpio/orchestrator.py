@@ -58,7 +58,10 @@ class QbeeOrchestrator(contextlib.AsyncExitStack):
             BackgroundTask(self._standby) if self._cfg.sound_detection.enable else None
         )
         self._sound_poller = (
-            SoundPoller(self._cfg.sound_detection.driver_path)
+            SoundPoller(
+                self._cfg.sound_detection.driver_path,
+                self._cfg.sound_detection.currently_in_use_command,
+            )
             if self._cfg.sound_detection.enable
             else None
         )
@@ -114,12 +117,17 @@ class QbeeOrchestrator(contextlib.AsyncExitStack):
                 self._standby_task.cancel()
                 await self._safe_turn_on()
             else:
+                # Clear the display.
+                if self._lcd:
+                    await self._print("")
                 self._standby_task.create()
 
     async def _safe_turn_on(self) -> None:
         assert self._amp_switch
         async with self._lock:
             if self._current_power_stack:
+                if self._lcd:
+                    await self._print(self._last_message)
                 return
             logger.debug("turning on amp")
             stack = contextlib.AsyncExitStack()
