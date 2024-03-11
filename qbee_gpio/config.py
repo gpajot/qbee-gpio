@@ -21,9 +21,13 @@ class LCDConfig:
     pin_data_5: int = 24
     pin_data_6: int = 23
     pin_data_7: int = 22
-    now_playing_path: Path = attrs.field(
+    shairport_metadata_path: Optional[Path] = attrs.field(
         default=Path("/tmp/shairport-sync-metadata"),
-        converter=Path,
+        converter=lambda e: Path(e) if e else None,
+    )
+    librespot_metadata_path: Optional[Path] = attrs.field(
+        default=Path("/tmp/librespot-metadata"),
+        converter=lambda e: Path(e) if e else None,
     )
     startup_message: str = "Qbee"
 

@@ -4,52 +4,61 @@
 [![version](https://img.shields.io/pypi/v/qbee-gpio?label=stable)](https://pypi.org/project/qbee-gpio/)
 [![python](https://img.shields.io/pypi/pyversions/qbee-gpio)](https://pypi.org/project/qbee-gpio/)
 
-A python script to control an LCD and amplifier relay for use in an AirPlay Raspberry Pi server.
+A python script to control an LCD and amplifier relay for use in an AirPlay and/or Spotify Connect Raspberry Pi server.
 
 * Detect sound ouput and turn on the amplifier power supply.
-* Get the track information and display it on an LCD (using a fifo pipe exposed by [shairport-sync](https://github.com/mikebrady/shairport-sync)).
+* Get the track information and display it on an LCD.
 * Auto turn off amplifier power supply and/or shutdown after set period of inactivity.
 
 ## Installation
 
 ```shell
-python -m pip install --user qbee-gpio
+sudo python -m pip install qbee-gpio
 ````
 
 For first time usage:
 ```shell
-~/.local/bin/qbee --init-config
+qbee --init-config
 ```
 then change what you need in `~/.qbee.yaml`.
 
 ## Usage
 
 ```shell
-~/.local/bin/qbee
+qbee
 ```
 
 Pass a `-v` flag for verbose logging.
 
 ## Detailed setup
 
-### Setting up Hifiberry DAC
+### Qbee
 
-Edit `/boot/config.txt` to add:
+For starting up automatically, create `/etc/systemd/system/qbee.service` file with (adjust users/paths):
 ```
-dtparam=audio=on
-dtoverlay=hifiberry-dac
-```
+[Unit]
+Description=Qbee
+After=network-online.target
+StartLimitIntervalSec=500
+StartLimitBurst=5
 
-To disable the built-in sound card, edit `/etc/modprobe.d/raspi-blacklist.conf` to add:
-```
-blacklist snd_bcm2835
-```
+[Service]
+User=qbee
+Group=qbee
+ExecStart=/usr/local/bin/qbee
+Restart=on-failure
+RestartSec=5s
 
-Edit `/etc/asound.conf` to set the default sound card for alsa, add:
+[Install]
+WantedBy=multi-user.target
 ```
-defaults.pcm.card 0
-defaults.ctl.card 0
-```
+Enable to run on boot: `sudo systemctl enable qbee --now`.
+
+Optionally, specify a `CONFIG` env variable when running the script:
+`CONFIG="/etc/qbee.yaml" ~/.local/bin/qbee ...`.
+The default config will be located at `~/.qbee.yaml`.
+
+See [all config options](./qbee_gpio/config.py)
 
 ### Setting up shairport-sync
 
@@ -83,35 +92,93 @@ metadata =
 };
 ```
 
-Enable to run on boot: `sudo systemctl enable shairport-sync`.
+Enable to run on boot: `sudo systemctl enable shairport-sync --now`.
 
-### Qbee
+### Setting up Librespot
 
-For starting up automatically, create `/etc/systemd/system/qbee.service` file with (adjust users/paths):
+If [Raspotify](https://dtcooper.github.io/raspotify/) is available on your system, use it,
+otherwise, you will need to compile [librespot](https://github.com/librespot-org/librespot/wiki).
+
+For starting up automatically, create `/lib/systemd/system/librespot.service` file with (adjust users/paths):
 ```
 [Unit]
-Description=Qbee
-After=network-online.target
-StartLimitIntervalSec=500
-StartLimitBurst=5
+Description=Librespot
+After=sound.target
+Requires=avahi-daemon.service
+After=avahi-daemon.service
+Wants=network-online.target
+After=network.target network-online.target
 
 [Service]
 User=qbee
 Group=qbee
-ExecStart=/home/qbee/.local/bin/qbee
+EnvironmentFile=/etc/librespot.env
+ExecStart=/usr/bin/librespot
 Restart=on-failure
 RestartSec=5s
 
 [Install]
 WantedBy=multi-user.target
 ```
-Enable to run on boot: `sudo systemctl enable qbee`.
 
-Optionally, specify a `CONFIG` env variable when running the script:
-`CONFIG="/etc/qbee.yaml" ~/.local/bin/qbee ...`.
-The default config will be located at `~/.qbee.yaml`.
+The conf `/etc/librespot.env` should look like:
+```shell
+LIBRESPOT_NAME="Qbee"
 
-See [all config options](./qbee_gpio/config.py)
+LIBRESPOT_QUIET=
+
+LIBRESPOT_ENABLE_VOLUME_NORMALISATION=
+LIBRESPOT_BITRATE="320"
+LIBRESPOT_BACKEND="alsa"
+LIBRESPOT_INITIAL_VOLUME="40"
+
+LIBRESPOT_ONEVENT="/usr/local/bin/librespot-pipe.sh"
+
+QBEE_LIBRESPOT_METADATA_PIPE="/tmp/librespot-metadata"
+```
+
+You will also need to set up the script to pipe events to Qbee in `/usr/local/bin/librespot-pipe.sh` and make it executable:
+```bash
+#!/usr/bin/bash
+
+# Expose track_changed librespot events in a named pipe.
+
+# Only expose track changed events.
+if [ "$PLAYER_EVENT" != 'track_changed' ]; then
+  exit 0
+fi
+# Need a named pipe.
+if [ "$QBEE_LIBRESPOT_METADATA_PIPE" == '' ]; then
+  exit 0
+fi
+# It must already be opened for reading.
+if ! [ -p "$QBEE_LIBRESPOT_METADATA_PIPE" ] ; then
+  exit 0
+fi
+artist=$(printf '%s' "$ARTISTS" | base64)
+album=$(printf '%s' "$ALBUM" | base64)
+title=$(printf '%s' "$NAME" | base64)
+printf 'artist:%s,album:%s,title:%s\t' "$artist" "$album" "$title" > "$QBEE_LIBRESPOT_METADATA_PIPE"
+```
+
+### Setting up Hifiberry DAC
+
+Edit `/boot/config.txt` to add:
+```
+dtparam=audio=on
+dtoverlay=hifiberry-dac
+```
+
+To disable the built-in sound card, edit `/etc/modprobe.d/raspi-blacklist.conf` to add:
+```
+blacklist snd_bcm2835
+```
+
+Edit `/etc/asound.conf` to set the default sound card for alsa, add:
+```
+defaults.pcm.card 0
+defaults.ctl.card 0
+```
 
 ### Disable Pi GPU
 

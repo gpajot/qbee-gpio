@@ -29,7 +29,6 @@ class SoundPoller:
                     stderr=asyncio.subprocess.PIPE,
                 )
                 stdout, _ = await process.communicate()
-                logger.debug(stdout)
                 if stdout:
                     yield True
             async for event in inotify:
