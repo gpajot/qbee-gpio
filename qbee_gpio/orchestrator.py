@@ -1,13 +1,17 @@
 import asyncio
 import contextlib
 import logging.config
-from typing import Optional
+from typing import List, Optional
 
 from concurrent_tasks import BackgroundTask, LoopExceptionHandler
 
 from qbee_gpio.config import QbeeConfig
 from qbee_gpio.gpio import GPIOLCDDisplay, GPIOSwitch
-from qbee_gpio.shairport_now_playing_poller import ShairportNowPlayingPoller
+from qbee_gpio.metadata import (
+    LibrespotNowPlayingPoller,
+    NowPlayingPoller,
+    ShairportNowPlayingPoller,
+)
 from qbee_gpio.sound_poller import SoundPoller
 
 logger = logging.getLogger(__name__)
@@ -65,20 +69,27 @@ class QbeeOrchestrator(contextlib.AsyncExitStack):
             if self._cfg.sound_detection.enable
             else None
         )
-        self._now_playing_poller = (
-            ShairportNowPlayingPoller(self._cfg.lcd.now_playing_path)
-            if self._cfg.lcd.enable
-            else None
-        )
 
         self._lock = asyncio.Lock()
         self._poll_sound_task = (
             BackgroundTask(self._poll_sound) if self._sound_poller else None
         )
         self._current_power_stack: Optional[contextlib.AsyncExitStack] = None
-        self._poll_now_playing_task = (
-            BackgroundTask(self._poll_now_playing) if self._now_playing_poller else None
-        )
+        self._poll_now_playing_tasks: List[BackgroundTask] = []
+        if self._cfg.lcd.enable and self._cfg.lcd.shairport_metadata_path:
+            self._poll_now_playing_tasks.append(
+                BackgroundTask(
+                    self._poll_now_playing,
+                    ShairportNowPlayingPoller(self._cfg.lcd.shairport_metadata_path),
+                )
+            )
+        if self._cfg.lcd.enable and self._cfg.lcd.librespot_metadata_path:
+            self._poll_now_playing_tasks.append(
+                BackgroundTask(
+                    self._poll_now_playing,
+                    LibrespotNowPlayingPoller(self._cfg.lcd.librespot_metadata_path),
+                )
+            )
         self._last_message = (
             self._cfg.lcd.startup_message if self._cfg.lcd.enable else ""
         )
@@ -90,8 +101,8 @@ class QbeeOrchestrator(contextlib.AsyncExitStack):
         self.push_async_callback(self._safe_turn_off)
         if self._poll_sound_task:
             self.enter_context(self._poll_sound_task)
-        if self._poll_now_playing_task:
-            self.enter_context(self._poll_now_playing_task)
+        for task in self._poll_now_playing_tasks:
+            self.enter_context(task)
         return self
 
     async def run(self) -> None:
@@ -100,7 +111,7 @@ class QbeeOrchestrator(contextlib.AsyncExitStack):
             async with self:
                 logger.info("started orchestrator")
                 await self._stop_event.wait()
-        logger.info("stopped orchestrator")
+        logger.debug("stopped orchestrator")
 
     async def _stop(self) -> None:
         logger.debug("stopping orchestrator...")
@@ -162,10 +173,8 @@ class QbeeOrchestrator(contextlib.AsyncExitStack):
 
     # LCD.
 
-    async def _poll_now_playing(self) -> None:
-        assert self._now_playing_poller
-        assert self._cfg.lcd
-        async for event in self._now_playing_poller.poll():
+    async def _poll_now_playing(self, poller: NowPlayingPoller) -> None:
+        async for event in poller.poll():
             self._last_message = event.display(self._cfg.lcd.lines)
             await self._print(self._last_message)
 
