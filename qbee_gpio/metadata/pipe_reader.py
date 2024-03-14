@@ -40,7 +40,6 @@ class PipeReader(contextlib.AsyncExitStack, asyncio.Protocol):
             self._transport.close()
 
     def data_received(self, data: bytes) -> None:
-        logger.debug(data.decode())
         self._received_data.put_nowait(data)
 
     def connection_lost(self, exc):
