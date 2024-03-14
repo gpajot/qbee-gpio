@@ -14,12 +14,11 @@ class LCDConfig:
     width: int = 16
     lines: Literal[1, 2, 4] = 2
     # GPIO PIN configuration (BCM mode).
-    pin_power: int = 17
-    pin_register_select: int = 27
-    pin_enable: int = 18
-    pin_data_4: int = 25
-    pin_data_5: int = 24
-    pin_data_6: int = 23
+    pin_register_select: int = 14
+    pin_enable: int = 15
+    pin_data_4: int = 18
+    pin_data_5: int = 17
+    pin_data_6: int = 27
     pin_data_7: int = 22
     shairport_metadata_path: Optional[Path] = attrs.field(
         default=Path("/tmp/shairport-sync-metadata"),
@@ -55,7 +54,8 @@ class SoundDetectionConfig:
     #   - or the user is root
     shutdown_command: Optional[str] = None
     # GPIO PIN configuration (BCM mode).
-    pin_amp_power: int = 4
+    pin_on: int = 4
+    pin_standby: int = 2
 
 
 @attrs.define
