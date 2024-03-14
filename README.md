@@ -10,6 +10,8 @@ A python script to control an LCD and amplifier relay for use in an AirPlay and/
 * Get the track information and display it on an LCD.
 * Auto turn off amplifier power supply and/or shutdown after set period of inactivity.
 
+For hardware stuff, see [here](./HARDWARE.md).
+
 ## Installation
 
 ```shell
@@ -55,7 +57,7 @@ WantedBy=multi-user.target
 Enable to run on boot: `sudo systemctl enable qbee --now`.
 
 Optionally, specify a `CONFIG` env variable when running the script:
-`CONFIG="/etc/qbee.yaml" ~/.local/bin/qbee ...`.
+`CONFIG="/etc/qbee.yaml" qbee ...`.
 The default config will be located at `~/.qbee.yaml`.
 
 See [all config options](./qbee_gpio/config.py)
@@ -160,38 +162,3 @@ album=$(printf '%s' "$ALBUM" | base64)
 title=$(printf '%s' "$NAME" | base64)
 printf 'artist:%s,album:%s,title:%s\t' "$artist" "$album" "$title" > "$QBEE_LIBRESPOT_METADATA_PIPE"
 ```
-
-### Setting up Hifiberry DAC
-
-Edit `/boot/config.txt` to add:
-```
-dtparam=audio=on
-dtoverlay=hifiberry-dac
-```
-
-To disable the built-in sound card, edit `/etc/modprobe.d/raspi-blacklist.conf` to add:
-```
-blacklist snd_bcm2835
-```
-
-Edit `/etc/asound.conf` to set the default sound card for alsa, add:
-```
-defaults.pcm.card 0
-defaults.ctl.card 0
-```
-
-### Disable Pi GPU
-
-This should help give more power to the CPU, useful for older Pis.
-Edit `/boot/config.txt` and add:
-```
-gpu_mem=16
-disable_l2cache=0  # For pi 1 only
-gpu_freq=250
-```
-
-### Full circuit diagram
-
-<img title="Qbee wirings" src="./circuit.jpg">
-
-The relay turns on the 24 VDC power supply, which powers the amplifier, the LCD backlight and a green status LED.

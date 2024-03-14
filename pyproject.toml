@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "qbee-gpio"
-version = "2.0.1"
-description = "Control an LCD display and amplifier relay for use in an AirPlay Raspberry Pi server."
+version = "3.0.0"
+description = "Control an LCD display and amplifier relay for use in an AirPlay and/or Spotify Connect Raspberry Pi server."
 authors = ["Gabriel Pajot <gab@lescactus.eu>"]
 license = "MIT"
 readme = "README.md"
