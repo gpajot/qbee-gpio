@@ -87,20 +87,21 @@ class QbeeOrchestrator(contextlib.AsyncExitStack):
                     LibrespotNowPlayingPoller(self._cfg.lcd.librespot_metadata_path),
                 )
             )
-        self._last_message = self._cfg.lcd.startup_message
+        self._now_playing = self._cfg.lcd.startup_message
         self._stop_event = asyncio.Event()
 
     async def __aenter__(self):
-        self._switch(False)
-        self.callback(self._switch, False)
+        await self._switch(False)
+        self.push_async_callback(self._switch, False)
+        # Init this initially to make sure the display is clean.
+        if self._lcd:
+            await self._lcd.init()
         if self._standby_task:
             self.enter_context(self._standby_task)
-        if self._poll_sound_task:
-            self.enter_context(self._poll_sound_task)
-        if self._lcd:
-            await self.enter_async_context(self._lcd)
         for task in self._poll_now_playing_tasks:
             self.enter_context(task)
+        if self._poll_sound_task:
+            self.enter_context(self._poll_sound_task)
         return self
 
     async def run(self) -> None:
@@ -124,10 +125,11 @@ class QbeeOrchestrator(contextlib.AsyncExitStack):
             if output:
                 logger.debug("cancelling standby mode")
                 self._standby_task.cancel()
-                self._switch(True)
-                await self._print(self._last_message)
+                await self._switch(True)
+                await self._display_now_playing()
             else:
-                await self._print("")  # Clear the display.
+                if self._lcd:
+                    await self._lcd.clear()
                 self._standby_task.create()
 
     async def _standby(self) -> None:
@@ -136,7 +138,7 @@ class QbeeOrchestrator(contextlib.AsyncExitStack):
             logger.debug("entering standby mode")
             await asyncio.sleep(self._cfg.sound_detection.standby_duration)
             logger.debug("exiting standby mode")
-            self._switch(False)
+            await self._switch(False)
         if self._cfg.sound_detection.shutdown_command:
             logger.info("shutting down system...")
             await asyncio.create_subprocess_shell(
@@ -147,19 +149,25 @@ class QbeeOrchestrator(contextlib.AsyncExitStack):
 
     async def _poll_now_playing(self, poller: NowPlayingPoller) -> None:
         async for event in poller.poll():
-            self._last_message = event.display(self._cfg.lcd.lines)
-            await self._print(self._last_message)
+            self._now_playing = event.display(self._cfg.lcd.lines)
+            await self._display_now_playing()
 
-    async def _print(self, message: str) -> None:
+    async def _display_now_playing(self) -> None:
         if not self._lcd:
             return
-        await self._lcd.display(message, align=str.center)
+        await self._lcd.display(self._now_playing)
 
     # Switches.
 
-    def _switch(self, value: bool) -> None:
-        if not self._standby_switch or not self._on_switch:
-            return
-        logger.debug("turning %s", "on" if value else "off")
-        self._on_switch(value)
-        self._standby_switch(not value)
+    async def _switch(self, value: bool) -> None:
+        if self._standby_switch and self._on_switch:
+            logger.debug("turning %s", "on" if value else "off")
+            self._on_switch(value)
+            self._standby_switch(not value)
+        # Reinitialize LCD even if it doesn't turn off with the amp as I get
+        # corrupted display when it has been idle for a while...
+        if self._lcd:
+            if value:
+                await self._lcd.init()
+            else:
+                await self._lcd.close()
