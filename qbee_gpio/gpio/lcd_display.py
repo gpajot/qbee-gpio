@@ -2,7 +2,8 @@ import asyncio
 import contextlib
 import unicodedata
 from dataclasses import dataclass, field
-from typing import Callable, Literal, Sequence, Tuple
+from time import monotonic
+from typing import Callable, Literal, Optional, Sequence, Tuple
 
 try:
     from RPi import GPIO
@@ -37,7 +38,9 @@ class GPIOLCDDisplay(contextlib.AbstractAsyncContextManager):
 
     _line_addresses: Tuple[int, ...] = field(init=False)
     _lock: asyncio.Lock = field(default_factory=asyncio.Lock)
-    _init: bool = False  # Has the LCD been initialized.
+    _init: bool = field(default=False, init=False)  # Has the LCD been initialized.
+    _last_cmd_start: float = field(default=0, init=False)
+    _last_cmd_wait: float = field(default=0, init=False)
 
     def __post_init__(self):
         # Set up the line addresses (based on width for more than 2 lines).
@@ -67,15 +70,21 @@ class GPIOLCDDisplay(contextlib.AbstractAsyncContextManager):
             GPIO.output(self.pin_register_select, False)
             # No need to wait here as if the PI is booted power is already high enough.
             # Send 3 times the same command to ensure 8-bit mode.
-            await self._send_command((0, 0, 1, 1))
-            await asyncio.sleep(0.01)  # Wait more than 4.1ms here as per specs.
-            await self._send_command((0, 0, 1, 1))
-            await asyncio.sleep(0.001)  # Wait more than 100µs here as per specs.
-            await self._send_command((0, 0, 1, 1))
+            await self._write(
+                (0, 0, 1, 1),
+                # Wait more than 4.1ms here as per specs.
+                wait_for=0.0045,
+            )
+            await self._write(
+                (0, 0, 1, 1),
+                # Wait more than 100µs here as per specs.
+                wait_for=0.00011,
+            )
+            await self._write((0, 0, 1, 1))
             # Now switch to 4-bit.
-            await self._send_command((0, 0, 1, 0))
+            await self._write((0, 0, 1, 0))
             # Function set.
-            await self._send_command(
+            await self._write(
                 (0, 0, 1, 0),
                 (
                     bool(self.lines > 1),
@@ -85,7 +94,7 @@ class GPIOLCDDisplay(contextlib.AbstractAsyncContextManager):
                 ),
             )
             # Display on/off control.
-            await self._send_command(
+            await self._write(
                 (0, 0, 0, 0),
                 (
                     1,
@@ -95,9 +104,9 @@ class GPIOLCDDisplay(contextlib.AbstractAsyncContextManager):
                 ),
             )
             # Clear display.
-            await self._send_command((0, 0, 0, 0), (0, 0, 0, 1))
+            await self._write((0, 0, 0, 0), (0, 0, 0, 1))
             # Entry mode set.
-            await self._send_command(
+            await self._write(
                 (0, 0, 0, 0),
                 (
                     0,
@@ -120,7 +129,7 @@ class GPIOLCDDisplay(contextlib.AbstractAsyncContextManager):
     ) -> None:
         """Display a message on the screen."""
         if not message.strip():
-            await self._send_command((0, 0, 0, 0), (0, 0, 0, 1))
+            await self._write((0, 0, 0, 0), (0, 0, 0, 1))
             return
         lines = message.split("\n")
         if wrap:
@@ -147,33 +156,26 @@ class GPIOLCDDisplay(contextlib.AbstractAsyncContextManager):
             if not self._init:
                 return
             for i, line in enumerate(lines):
-                await self._send_command(
+                await self._write(
                     *get_bits(0x80 + self._line_addresses[i]),
                 )
                 for char in line:
-                    await self._send_char(ord(char))
+                    await self._write(*get_bits(ord(char)), is_cmd=False)
 
-    async def _send_char(self, byte: int) -> None:
-        """Send a single byte."""
-        # Set the mode.
-        GPIO.output(self.pin_register_select, True)
-        # Send bits 4-7 then 0-3.
-        for bits in get_bits(byte):
-            await self._send_4_bits(*bits)
-
-    async def _send_command(
+    async def _write(
         self,
         *high_and_low_bits: Tuple[Bit, Bit, Bit, Bit],
+        is_cmd: bool = True,
+        wait_for: Optional[float] = None,
     ) -> None:
-        GPIO.output(self.pin_register_select, False)
+        GPIO.output(self.pin_register_select, not is_cmd)
         for bits in high_and_low_bits:
             await self._send_4_bits(*bits)
-        if high_and_low_bits == ((0, 0, 0, 0), (0, 0, 0, 1)):
-            # Wait more than 1.52ms after clear command.
-            await asyncio.sleep(0.002)
-        else:
-            # Wait more than 37µs after other commands.
-            await asyncio.sleep(0.00005)
+        self._mark_start(
+            wait_for or 0.00155
+            if high_and_low_bits == ((0, 0, 0, 0), (0, 0, 0, 1))
+            else 0.000045,
+        )
 
     async def _send_4_bits(
         self,
@@ -186,12 +188,24 @@ class GPIOLCDDisplay(contextlib.AbstractAsyncContextManager):
         GPIO.output(self.pin_data_5, bit1)
         GPIO.output(self.pin_data_6, bit2)
         GPIO.output(self.pin_data_7, bit3)
+        await self._wait_ready()
         await self._enable()
 
     async def _enable(self) -> None:
         GPIO.output(self.pin_enable, True)
-        await asyncio.sleep(0.000001)
+        # Wait more than 450ns.
+        # We need a bit more as we are using 3.3V signal on 5V LCD.
+        await asyncio.sleep(0.000002)
         GPIO.output(self.pin_enable, False)
+
+    async def _wait_ready(self) -> None:
+        """Wait until enough time has passed for the previous command to be taken into account."""
+        if (wait := self._last_cmd_wait - (monotonic() - self._last_cmd_start)) > 0:
+            await asyncio.sleep(wait)
+
+    def _mark_start(self, wait_for: float) -> None:
+        self._last_cmd_start = monotonic()
+        self._last_cmd_wait = wait_for
 
 
 def get_bits(
