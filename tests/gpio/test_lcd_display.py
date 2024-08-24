@@ -3,7 +3,7 @@ import pytest
 from qbee_gpio.gpio.lcd_display import GPIOLCDDisplay
 
 
-@pytest.fixture()
+@pytest.fixture
 def get_lcd():
     def _get(width, lines):
         return GPIOLCDDisplay(
