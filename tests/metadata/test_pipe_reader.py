@@ -9,12 +9,12 @@ import pytest
 from qbee_gpio.metadata.pipe_reader import PipeReader
 
 
-@pytest.fixture()
+@pytest.fixture
 def path():
     return Path(__file__).parent / "test_pipe"
 
 
-@pytest.fixture()
+@pytest.fixture
 def send_script():
     path = Path(__file__).parent / "pipe.sh"
     path.write_text(
@@ -43,7 +43,7 @@ def make_fifo(path):
         path.unlink(missing_ok=True)
 
 
-@pytest.fixture()
+@pytest.fixture
 def send_message(path, send_script):
     async def _send(data) -> int:
         process = await asyncio.create_subprocess_shell(
