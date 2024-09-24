@@ -11,7 +11,7 @@ include = ["qbee_gpio/py.typed"]
 [tool.poetry.dependencies]
 python = ">=3.8"
 
-asyncinotify = { version = ">=4.0,<4.1", python = "<4" }
+asyncinotify = { version = ">=4.0,<4.2", python = "<4" }
 concurrent-tasks = ">=1.7,<2"
 zenconfig = { version = ">=2.1.0,<3", extras = ["yaml", "attrs"] }
 
