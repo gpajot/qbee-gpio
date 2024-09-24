@@ -2,13 +2,13 @@
 
 [[package]]
 name = "asyncinotify"
-version = "4.0.9"
+version = "4.1.0"
 description = "A simple optionally-async python inotify library, focused on simplicity of use and operation, and leveraging modern Python features"
 optional = false
 python-versions = "<4,>=3.6"
 files = [
-    {file = "asyncinotify-4.0.9-py3-none-any.whl", hash = "sha256:45e3e2c95e331b4fbc0a76db3ad8e25e50d2a436ae2cd0d9917bcfd8b7d5cd37"},
-    {file = "asyncinotify-4.0.9.tar.gz", hash = "sha256:d0fc2c9af487b6ac2a3bd7db7b5139de54afcc3660720f80d7324b122a27c1c7"},
+    {file = "asyncinotify-4.1.0-py3-none-any.whl", hash = "sha256:b5f5dd14466eee2294343407dd37cea2d52ef0e104fcc8738cf9dfa847264fed"},
+    {file = "asyncinotify-4.1.0.tar.gz", hash = "sha256:41743900519ebdefe53e751df1d39689aca88794d783af945d306348a1398501"},
 ]
 
 [[package]]
@@ -474,4 +474,4 @@ yaml = ["PyYAML (>=6,<7)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8"
-content-hash = "61170c0d01c702168ae07c435ce2e02ecdda46071b48ea2fe3ac4f3cc95b9e66"
+content-hash = "cf4e2a66272c2c2bca9106c9503ac2e095f44fd61ba95ce9154b1eb329fa0305"
