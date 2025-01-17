@@ -47,7 +47,7 @@ def make_fifo(path):
 def send_message(path, send_script):
     async def _send(data) -> int:
         process = await asyncio.create_subprocess_shell(
-            f'PIPE="{str(path)}"' f' DATA="{data}"' f" . {str(send_script.absolute())}"
+            f'PIPE="{str(path)}" DATA="{data}" . {str(send_script.absolute())}'
         )
         return await process.wait()
 

@@ -1,3 +1,4 @@
+# noqa: A005
 """
 Minimal GPIO types for static typing and mocking in tests.
 """
