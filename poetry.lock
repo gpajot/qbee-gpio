@@ -2,15 +2,15 @@
 
 [[package]]
 name = "asyncinotify"
-version = "4.2.0"
+version = "4.2.1"
 description = "A simple optionally-async python inotify library, focused on simplicity of use and operation, and leveraging modern Python features"
 optional = false
 python-versions = "<4,>=3.6"
 groups = ["main"]
 markers = "python_version < \"4\""
 files = [
-    {file = "asyncinotify-4.2.0-py3-none-any.whl", hash = "sha256:23cbcb0704cc65a2009d5ddc5a70dc5be6560708d8a684bba82e03e384c6295f"},
-    {file = "asyncinotify-4.2.0.tar.gz", hash = "sha256:dac1d75e16a4919c6eab84a90ff51218db622c5524a84a5c501a0b62ea7ec7ea"},
+    {file = "asyncinotify-4.2.1-py3-none-any.whl", hash = "sha256:40a982e76e9450fbb56858620565cdeb21c35849585ceba1a1a90b8b74d1e15e"},
+    {file = "asyncinotify-4.2.1.tar.gz", hash = "sha256:8078b0b0d81c19043141ab0fc5654e89a4d3023dc3e4486aaa245b1ff5f5ddc9"},
 ]
 
 [[package]]
