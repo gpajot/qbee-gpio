@@ -1,19 +1,24 @@
-[tool.poetry]
+[project]
 name = "qbee-gpio"
 version = "3.0.2"
 description = "Control an LCD display and amplifier relay for use in an AirPlay and/or Spotify Connect Raspberry Pi server."
-authors = ["Gabriel Pajot <gab@lescactus.eu>"]
-license = "MIT"
+license = { text = "MIT" }
 readme = "README.md"
-repository = "https://github.com/gpajot/qbee-gpio"
+requires-python = ">=3.9"
+authors = [
+    { name = "Gabriel Pajot", email = "gab@lescactus.eu" },
+]
+urls = { repository = "https://github.com/gpajot/qbee-gpio" }
+scripts = { qbee = 'qbee_gpio:run' }
+dependencies = [
+    "asyncinotify >=4.0,<4.3 ; python_version < '4'",
+    "concurrent-tasks >=1.7,<2",
+    "zenconfig[yaml,attrs] >=2.1.0,<3",
+]
+
+[tool.poetry]
 include = ["qbee_gpio/py.typed"]
-
-[tool.poetry.dependencies]
-python = ">=3.9"
-
-asyncinotify = { version = ">=4.0,<4.3", python = "<4" }
-concurrent-tasks = ">=1.7,<2"
-zenconfig = { version = ">=2.1.0,<3", extras = ["yaml", "attrs"] }
+requires-poetry = ">=2"
 
 [tool.poetry.group.test.dependencies]
 pytest = "==8.4.2"
@@ -23,25 +28,21 @@ ruff = "==0.12.11"
 mypy = "==1.17.1"
 pre-commit = "==4.3.0"
 
-[tool.poetry.scripts]
-qbee = 'qbee_gpio:run'
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
-
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 
 [tool.mypy]
+check_untyped_defs = true
 ignore_missing_imports = true
 install_types = true
 non_interactive = true
-check_untyped_defs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
 
 [tool.ruff.lint]
 select = ["A", "B", "E", "F", "I", "PT"]
 ignore = ["E501"]
-
-[tool.ruff.lint.per-file-ignores]
-"__init__.py" = ["F401"]
+per-file-ignores = { "__init__.py" = ["F401"] }
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
