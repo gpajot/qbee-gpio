@@ -2,7 +2,7 @@
 name = "qbee-gpio"
 version = "3.0.2"
 description = "Control an LCD display and amplifier relay for use in an AirPlay and/or Spotify Connect Raspberry Pi server."
-license = { text = "MIT" }
+license = "MIT"
 readme = "README.md"
 requires-python = ">=3.9"
 authors = [
@@ -15,18 +15,17 @@ dependencies = [
     "concurrent-tasks >=1.7,<2",
     "zenconfig[yaml,attrs] >=2.1.0,<3",
 ]
+license-files = ["LICENSE"]
 
-[tool.poetry]
-include = ["qbee_gpio/py.typed"]
-requires-poetry = ">=2"
-
-[tool.poetry.group.test.dependencies]
-pytest = "==8.4.2"
-pytest-asyncio = "==1.1.0"
-pytest-mock = "==3.14.1"
-ruff = "==0.12.11"
-mypy = "==1.17.1"
-pre-commit = "==4.3.0"
+[dependency-groups]
+dev = [
+    "pytest ==8.4.2",
+    "pytest-asyncio ==1.1.0",
+    "pytest-mock ==3.14.1",
+    "ruff ==0.12.11",
+    "mypy ==1.17.1",
+    "pre-commit ==4.3.0",
+]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
@@ -43,6 +42,10 @@ warn_unused_ignores = true
 select = ["A", "B", "E", "F", "I", "PT"]
 ignore = ["E501"]
 per-file-ignores = { "__init__.py" = ["F401"] }
+
+[tool.uv]
+build-backend = { module-name = "qbee_gpio", module-root = "" }
+
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["uv_build>=0.8.15,<0.9"]
+build-backend = "uv_build"
