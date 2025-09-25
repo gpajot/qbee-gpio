@@ -15,16 +15,17 @@ class ShairportNowPlayingPoller(PipeReader, NowPlayingPoller):
     """Poll shairport metadata pipe and expose minimal information."""
 
     def __init__(self, path: Path):
-        super().__init__(
-            path,
-            f"<item><type>{b'ssnc'.hex()}</type><code>{b'mden'.hex()}</code>".encode(),
-        )
+        super().__init__(path)
 
     async def poll(self) -> AsyncIterator[NowPlaying]:
         async with self:
             logger.debug("started now playing poller")
             last_event: Optional[NowPlaying] = None
-            async for data in self._receive():
+            reader = self.reader
+            while True:
+                data = await reader.readuntil(
+                    f"<item><type>{b'ssnc'.hex()}</type><code>{b'mden'.hex()}</code>".encode()
+                )
                 if (event := self._decode(data)) and event != last_event:
                     logger.debug("now playing %r", event)
                     last_event = event
