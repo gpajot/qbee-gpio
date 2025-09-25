@@ -1,67 +1,57 @@
 import asyncio
-import contextlib
-import logging
 import os
+from contextlib import AsyncExitStack, contextmanager
+from functools import partial
+from io import TextIOWrapper
 from pathlib import Path
-from typing import AsyncIterator, Optional
+from typing import Iterator, Optional
 
-logger = logging.getLogger(__name__)
+from concurrent_tasks import RobustStream
 
 
-class PipeReader(contextlib.AsyncExitStack, asyncio.Protocol):
-    """Read a pipe and expose an async iterator over data."""
+class PipeReader(RobustStream, AsyncExitStack):
+    """Read a named pipe and expose a stream reader over data."""
 
-    def __init__(self, path: Path, chunk_separator: bytes):
-        super().__init__()
-        self.path = path
-        self._chunk_separator = chunk_separator
-        # We need a queue as `data_received` is not async.
-        self._received_data: asyncio.Queue[bytes] = asyncio.Queue()
-        self._transport: Optional[asyncio.ReadTransport] = None
+    def __init__(self, path: Path, *, own_pipe: bool = False):
+        RobustStream.__init__(
+            self,
+            connector=self._connect_pipe,
+            name=type(self).__name__,
+            timeout=5,
+        )
+        AsyncExitStack.__init__(self)
+        self._path = path
+        self._own_pipe = own_pipe
+        self._pipe: Optional[TextIOWrapper] = None
 
     async def __aenter__(self):
-        await self._create_transport()
-        self.callback(self._close_transport)
+        self.enter_context(self._pipe_creator())
+        self.callback(self._close_pipe)
+        await RobustStream.__aenter__(self)
+        self.push_async_exit(partial(RobustStream.__aexit__, self))
         return self
 
-    async def _create_transport(self) -> None:
-        pipe = self.enter_context(
-            open(
-                os.open(str(self.path), os.O_RDONLY | os.O_NONBLOCK),
-            ),
-        )
-        self._transport, _ = await asyncio.get_running_loop().connect_read_pipe(
-            lambda: self,
-            pipe,
-        )
+    @contextmanager
+    def _pipe_creator(self) -> Iterator[None]:
+        if self._own_pipe:
+            self._path.unlink(missing_ok=True)
+        created = False
+        if not self._path.exists():
+            os.mkfifo(str(self._path))
+            created = True
+        try:
+            yield None
+        finally:
+            if created:
+                self._path.unlink(missing_ok=True)
 
-    def _close_transport(self) -> None:
-        if self._transport:
-            self._transport.close()
+    def _close_pipe(self) -> None:
+        if self._pipe:
+            self._pipe.close()
 
-    def data_received(self, data: bytes) -> None:
-        self._received_data.put_nowait(data)
-
-    def connection_lost(self, exc):
-        # If no exception it means write end has closed.
-        if exc:
-            logger.warning("error received while reading %s: %r", self.path, exc)
-        # Signal to reconnect.
-        self._received_data.put_nowait(b"")
-
-    async def _receive(self) -> AsyncIterator[bytes]:
-        buffer = bytearray()
-        while True:
-            data = await self._received_data.get()
-            if not data:
-                # Reconnect.
-                logger.debug("reconnecting reader of %s", self.path)
-                await self._create_transport()
-                continue
-            buffer += data
-            try:
-                sep_index = buffer.index(self._chunk_separator)
-            except ValueError:
-                continue
-            yield buffer[:sep_index]
-            buffer = buffer[sep_index + len(self._chunk_separator) :]
+    async def _connect_pipe(self, protocol_factory):
+        self._close_pipe()
+        # If opening as read only, every time a writer disconnects, the pipe will close.
+        # Open it as read-write to avoid having to re-open it for every message.
+        self._pipe = open(os.open(str(self._path), os.O_RDWR | os.O_NONBLOCK))
+        await asyncio.get_running_loop().connect_read_pipe(protocol_factory, self._pipe)

@@ -1,6 +1,5 @@
 import base64
 import logging
-import os
 import re
 from pathlib import Path
 from typing import AsyncIterator, Optional
@@ -18,19 +17,15 @@ class LibrespotNowPlayingPoller(PipeReader, NowPlayingPoller):
     RE_METADATA = re.compile(r"artist:(.*?),album:(.*?),title:(.*)")
 
     def __init__(self, path: Path):
-        super().__init__(path, b"\t")
-
-    async def __aenter__(self):
-        self.path.unlink(missing_ok=True)
-        os.mkfifo(str(self.path))
-        self.callback(self.path.unlink, missing_ok=True)
-        return await super().__aenter__()
+        super().__init__(path, own_pipe=True)
 
     async def poll(self) -> AsyncIterator[NowPlaying]:
         async with self:
             logger.debug("started now playing poller")
             last_event: Optional[NowPlaying] = None
-            async for data in self._receive():
+            reader = self.reader
+            while True:
+                data = await reader.readuntil(b"\t")
                 if (event := self._decode(data)) and event != last_event:
                     logger.debug("now playing %r", event)
                     last_event = event
