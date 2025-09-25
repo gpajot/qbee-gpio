@@ -31,8 +31,7 @@ async def test_decode():
             b'<data encoding="base64">\nAQ==</data></item>\n'
             b"<item><type>636f7265</type><code>6173746d</code><length>4</length>\n"
             b'<data encoding="base64">\nAAXMsA==</data></item>\n'
-            b"<item><type>73736e63</type><code>6d64656e</code><length>10</length>\n"
-            b'<data encoding="base64">\nNDE5NTA3OTYxMA==</data></item>\n'
+            b"<item><type>73736e63</type><code>6d64656e</code><length>10</length>"
         )
     ) == NowPlaying(
         artist="Pink Floyd",

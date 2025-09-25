@@ -1,7 +1,5 @@
 import asyncio
 import base64
-import contextlib
-import os
 from pathlib import Path
 
 import pytest
@@ -33,16 +31,6 @@ printf 'data:%s\t' "$data" > "$PIPE"
         path.unlink(missing_ok=True)
 
 
-@contextlib.contextmanager
-def make_fifo(path):
-    path.unlink(missing_ok=True)
-    os.mkfifo(str(path))
-    try:
-        yield None
-    finally:
-        path.unlink(missing_ok=True)
-
-
 @pytest.fixture
 def send_message(path, send_script):
     async def _send(data) -> int:
@@ -57,23 +45,24 @@ def send_message(path, send_script):
 async def test_receive(path: Path, send_message):
     assert await send_message("ignored") == 0
 
-    reader = PipeReader(path, b"\t")
+    pipe_reader = PipeReader(path, own_pipe=True)
     received = []
 
     async def _read():
-        async for data in reader._receive():
+        reader = pipe_reader.reader
+        i = 0
+        while i < 2:
+            data = await reader.readuntil(b"\t")
             received.append(data.decode())
-            if len(received) == 2:
-                return
+            i += 1
 
-    with make_fifo(path):
-        async with reader:
-            read_task = asyncio.create_task(_read())
-            assert await send_message("hello") == 0
-            assert await send_message("bye") == 0
-            await read_task
+    async with pipe_reader:
+        read_task = asyncio.create_task(_read())
+        assert await send_message("hello") == 0
+        assert await send_message("bye") == 0
+        await read_task
 
     assert received == [
-        f"data:{base64.b64encode(b'hello').decode()}",
-        f"data:{base64.b64encode(b'bye').decode()}",
+        f"data:{base64.b64encode(b'hello').decode()}\t",
+        f"data:{base64.b64encode(b'bye').decode()}\t",
     ]

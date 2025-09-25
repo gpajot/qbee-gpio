@@ -11,7 +11,7 @@ async def test_decode():
     assert poller._decode(
         b"artist:UGluayBGbG95ZA==,"
         b"album:VGhlIERhcmsgU2lkZSBPZiBUaGUgTW9vbiAoMjAxMSBSZW1hc3RlcmVkIFZlcnNpb24p,"
-        b"title:TW9uZXkgLSAyMDExIFJlbWFzdGVyZWQgVmVyc2lvbg=="
+        b"title:TW9uZXkgLSAyMDExIFJlbWFzdGVyZWQgVmVyc2lvbg==\t"
     ) == NowPlaying(
         artist="Pink Floyd",
         album="The Dark Side Of The Moon (2011 Remastered Version)",
