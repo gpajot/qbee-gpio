@@ -1,6 +1,6 @@
 # My hardware
 
-I am using the first Hifiberry DAC on a Raspberry Pi 1.
+I am using the first Hifiberry DAC on a Raspberry Pi 3 B.
 I have added circuits to:
 
 * control the LCD, amplifier relay and a couple of status LEDs
@@ -10,7 +10,7 @@ I have added circuits to:
 
 ## Setting up Hifiberry DAC
 
-Edit `/boot/config.txt` to add:
+Edit `/boot/firmware/config.txt` to add:
 ```
 dtoverlay=hifiberry-dac
 ```
@@ -30,11 +30,18 @@ defaults.ctl.card 0
 ## Disable Pi GPU
 
 This should help give more power to the CPU, useful for older Pis.
-Edit `/boot/config.txt` and add:
+Edit `/boot/firmware/config.txt` and add:
 ```
 gpu_mem=16
-disable_l2cache=0  # For pi 1 only
 gpu_freq=250
+```
+
+## One-button start and stop
+
+Allow turning on and off the pi with a push button.
+Edit `/boot/firmware/config.txt` and add:
+```
+dtoverlay=gpio-shutdown,gpio_pin=3
 ```
 
 ## Circuit schematic
@@ -42,7 +49,7 @@ gpu_freq=250
 <img title="Qbee PCB" src="./circuit.png">
 
 Most of the GPIOs are used to control the LCD.
-GPIO 3 is used for a one-button start and stop (add `dtoverlay=gpio-shutdown` in `/boot/config.txt`).
+GPIO 3 is used for a one-button start and stop.
 2 more GPIOs are used to trigger 2 NPN transistors (to limit power drawn on the GPIO and allow using a higher voltage):
 - Q1:
   - the green on LED

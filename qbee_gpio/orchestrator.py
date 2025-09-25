@@ -1,12 +1,13 @@
 import asyncio
-import contextlib
 import logging.config
-from typing import List
+from contextlib import AsyncExitStack
+from typing import List, Optional
 
 from concurrent_tasks import BackgroundTask, LoopExceptionHandler
+from gpiozero import OutputDevice
 
 from qbee_gpio.config import QbeeConfig
-from qbee_gpio.gpio import GPIOLCDDisplay, gpio_switch
+from qbee_gpio.gpio import GPIOLCDDisplay
 from qbee_gpio.metadata import (
     LibrespotNowPlayingPoller,
     NowPlayingPoller,
@@ -17,7 +18,7 @@ from qbee_gpio.sound_poller import SoundPoller
 logger = logging.getLogger(__name__)
 
 
-class QbeeOrchestrator(contextlib.AsyncExitStack):
+class QbeeOrchestrator(AsyncExitStack):
     """Orchestrate power, sound driver, metadata and display.
 
     This will run two main background tasks:
@@ -28,12 +29,9 @@ class QbeeOrchestrator(contextlib.AsyncExitStack):
     When activity stops, a standby timer starts to turn off if no activity is detected in the meantime.
     """
 
-    def __init__(self, debug: bool = False):
+    def __init__(self, config: QbeeConfig):
         super().__init__()
-        self._cfg = QbeeConfig.load()
-        logging.config.dictConfig(self._cfg.log_config)
-        if debug:
-            logging.getLogger().setLevel(logging.DEBUG)
+        self._cfg = config
         self._lcd = (
             GPIOLCDDisplay(
                 pin_register_select=self._cfg.lcd.pin_register_select,
@@ -48,16 +46,8 @@ class QbeeOrchestrator(contextlib.AsyncExitStack):
             if self._cfg.lcd.enable
             else None
         )
-        self._on_switch = (
-            gpio_switch(self._cfg.sound_detection.pin_on)
-            if self._cfg.sound_detection.enable
-            else None
-        )
-        self._standby_switch = (
-            gpio_switch(self._cfg.sound_detection.pin_standby)
-            if self._cfg.sound_detection.enable
-            else None
-        )
+        self._on_switch: Optional[OutputDevice] = None
+        self._standby_switch: Optional[OutputDevice] = None
         self._standby_task = (
             BackgroundTask(self._standby) if self._cfg.sound_detection.enable else None
         )
@@ -91,11 +81,16 @@ class QbeeOrchestrator(contextlib.AsyncExitStack):
         self._stop_event = asyncio.Event()
 
     async def __aenter__(self):
-        await self._switch(False)
-        self.push_async_callback(self._switch, False)
-        # Init this initially to make sure the display is clean.
+        if self._cfg.sound_detection.enable:
+            self._on_switch = self.enter_context(
+                OutputDevice(self._cfg.sound_detection.pin_on)
+            )
+            self._standby_switch = self.enter_context(
+                OutputDevice(self._cfg.sound_detection.pin_standby)
+            )
+            self._standby_switch.on()
         if self._lcd:
-            await self._lcd.init()
+            await self.enter_async_context(self._lcd)
         if self._standby_task:
             self.enter_context(self._standby_task)
         for task in self._poll_now_playing_tasks:
@@ -162,8 +157,8 @@ class QbeeOrchestrator(contextlib.AsyncExitStack):
     async def _switch(self, value: bool) -> None:
         if self._standby_switch and self._on_switch:
             logger.debug("turning %s", "on" if value else "off")
-            self._on_switch(value)
-            self._standby_switch(not value)
+            self._on_switch.value = value
+            self._standby_switch.value = not value
         # Reinitialize LCD even if it doesn't turn off with the amp as I get
         # corrupted display when it has been idle for a while...
         if self._lcd:
