@@ -1,6 +1,6 @@
 [project]
 name = "qbee-gpio"
-version = "3.0.2"
+version = "3.1.0"
 description = "Control an LCD display and amplifier relay for use in an AirPlay and/or Spotify Connect Raspberry Pi server."
 license = "MIT"
 readme = "README.md"
@@ -12,13 +12,19 @@ urls = { repository = "https://github.com/gpajot/qbee-gpio" }
 scripts = { qbee = 'qbee_gpio:run' }
 dependencies = [
     "asyncinotify >=4.0,<4.3 ; python_version < '4'",
-    "concurrent-tasks >=1.7,<2",
+    "concurrent-tasks >=1.16.2,<2",
+    "gpiozero >=2.0.1,<2.1",
     "zenconfig[yaml,attrs] >=2.1.0,<3",
 ]
 license-files = ["LICENSE"]
 
+[project.optional-dependencies]
+gpio = [ "lgpio >=0.2.2.0,<0.2.3" ]
+
 [dependency-groups]
 dev = [
+    "mypy ==1.17.1",
+    "pre-commit ==4.3.0",
     "pytest ==8.4.2",
     "pytest-asyncio ==1.2.0",
     "pytest-mock ==3.15.1",
@@ -33,8 +39,6 @@ asyncio_mode = "auto"
 [tool.mypy]
 check_untyped_defs = true
 ignore_missing_imports = true
-install_types = true
-non_interactive = true
 warn_redundant_casts = true
 warn_unused_ignores = true
 
@@ -44,6 +48,7 @@ ignore = ["E501"]
 per-file-ignores = { "__init__.py" = ["F401"] }
 
 [tool.uv]
+default-groups = "all"
 build-backend = { module-name = "qbee_gpio", module-root = "" }
 
 [build-system]

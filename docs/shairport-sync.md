@@ -31,4 +31,4 @@ metadata =
 };
 ```
 
-Enable to run on boot: `sudo systemctl enable shairport-sync --now`.
+Enable to run on boot: `sudo systemctl enable shairport-sync.service --now`.

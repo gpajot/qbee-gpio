@@ -19,26 +19,27 @@ Additional documentation:
 ## Installation
 
 ```shell
-sudo python -m pip install qbee-gpio
+python -m venv ~/.qbee-env
+~/.qbee-env/bin/python -m pip install qbee-gpio[gpio]
 ````
 
 For first time usage:
 ```shell
-qbee --init-config
+~/.qbee-env/bin/qbee --init-config
 ```
 then change what you need in `~/.qbee.yaml`.
 
 ## Usage
 
 ```shell
-qbee
+~/.qbee-env/bin/qbee
 ```
 
 Pass a `-v` flag for verbose logging.
 
 ## Detailed setup
 
-For starting up automatically, create `/etc/systemd/system/qbee.service` file with (adjust users/paths):
+For starting up automatically, create `/lib/systemd/system/qbee.service` file with (adjust users/paths):
 ```
 [Unit]
 Description=Qbee
@@ -49,17 +50,17 @@ StartLimitBurst=5
 [Service]
 User=qbee
 Group=qbee
-ExecStart=/usr/local/bin/qbee
+ExecStart=/home/qbee/.qbee-env/bin/qbee
 Restart=on-failure
 RestartSec=5s
 
 [Install]
 WantedBy=multi-user.target
 ```
-Enable to run on boot: `sudo systemctl enable qbee --now`.
+Enable to run on boot: `sudo systemctl enable qbee.service --now`.
 
 Optionally, specify a `CONFIG` env variable when running the script:
-`CONFIG="/etc/qbee.yaml" qbee ...`.
+`CONFIG="/etc/qbee.yaml" ~/.qbee-env/bin/qbee ...`.
 The default config will be located at `~/.qbee.yaml`.
 
 See [all config options](./qbee_gpio/config.py)
