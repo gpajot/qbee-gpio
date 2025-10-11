@@ -100,15 +100,15 @@ class QbeeOrchestrator(AsyncExitStack):
         return self
 
     async def run(self) -> None:
-        logger.debug("starting orchestrator...")
+        logger.debug("starting...")
         async with LoopExceptionHandler(stop_func=self._stop):
             async with self:
-                logger.info("started orchestrator")
+                logger.info("started")
                 await self._stop_event.wait()
-        logger.debug("stopped orchestrator")
+        logger.debug("stopped")
 
     async def _stop(self) -> None:
-        logger.debug("stopping orchestrator...")
+        logger.debug("stopping...")
         self._stop_event.set()
 
     # Sound detection.
@@ -116,8 +116,8 @@ class QbeeOrchestrator(AsyncExitStack):
     async def _poll_sound(self) -> None:
         assert self._sound_poller
         assert self._standby_task
-        async for output in self._sound_poller.poll():
-            if output:
+        async for playing in self._sound_poller.poll():
+            if playing:
                 logger.debug("cancelling standby mode")
                 self._standby_task.cancel()
                 await self._switch(True)

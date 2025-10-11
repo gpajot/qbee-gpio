@@ -12,7 +12,7 @@ def run() -> None:
         cfg.save()
         sys.exit(0)
 
-    logging.config.dictConfig(cfg.log_config)
+    logging.config.dictConfig(cfg.logging)
     if "-v" in sys.argv:
         logging.getLogger().setLevel(logging.DEBUG)
 

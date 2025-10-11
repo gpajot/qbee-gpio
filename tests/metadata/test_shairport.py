@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from qbee_gpio.metadata.model import NowPlaying
+from qbee_gpio.metadata.interface import NowPlaying
 from qbee_gpio.metadata.shairport import ShairportNowPlayingPoller
 
 

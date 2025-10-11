@@ -60,7 +60,7 @@ class QbeeConfig(zenconfig.Config):
     lcd: LCDConfig = LCDConfig()
 
     # Logging.
-    log_config: dict = attrs.field(
+    logging: dict = attrs.field(
         factory=lambda: {
             "version": 1,
             "disable_existing_loggers": False,

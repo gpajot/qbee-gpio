@@ -46,7 +46,6 @@ ignore = ["E501"]
 per-file-ignores = { "__init__.py" = ["F401"] }
 
 [tool.uv]
-default-groups = "all"
 build-backend = { module-name = "qbee_gpio", module-root = "" }
 
 [build-system]

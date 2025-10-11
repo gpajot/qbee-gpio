@@ -1,7 +1,7 @@
 from pathlib import Path
 
+from qbee_gpio.metadata.interface import NowPlaying
 from qbee_gpio.metadata.librespot import LibrespotNowPlayingPoller
-from qbee_gpio.metadata.model import NowPlaying
 
 
 async def test_decode():

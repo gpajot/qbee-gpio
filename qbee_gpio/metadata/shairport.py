@@ -4,24 +4,23 @@ import re
 from pathlib import Path
 from typing import AsyncIterator, Optional
 
-from qbee_gpio.metadata.interface import NowPlayingPoller
-from qbee_gpio.metadata.model import NowPlaying
+from qbee_gpio.metadata.interface import NowPlaying, NowPlayingPoller
 from qbee_gpio.metadata.pipe_reader import PipeReader
 
 logger = logging.getLogger(__name__)
 
 
-class ShairportNowPlayingPoller(PipeReader, NowPlayingPoller):
+class ShairportNowPlayingPoller(NowPlayingPoller):
     """Poll shairport metadata pipe and expose minimal information."""
 
     def __init__(self, path: Path):
-        super().__init__(path)
+        self._path = path
 
     async def poll(self) -> AsyncIterator[NowPlaying]:
-        async with self:
+        async with PipeReader(self._path) as pipe_reader:
             logger.debug("started now playing poller")
             last_event: Optional[NowPlaying] = None
-            reader = self.reader
+            reader = pipe_reader.reader
             while True:
                 data = await reader.readuntil(
                     f"<item><type>{b'ssnc'.hex()}</type><code>{b'mden'.hex()}</code>".encode()

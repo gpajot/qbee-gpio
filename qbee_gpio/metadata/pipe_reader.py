@@ -1,7 +1,6 @@
 import asyncio
 import os
 from contextlib import AsyncExitStack, contextmanager
-from functools import partial
 from io import TextIOWrapper
 from pathlib import Path
 from typing import Iterator, Optional
@@ -9,17 +8,16 @@ from typing import Iterator, Optional
 from concurrent_tasks import RobustStream
 
 
-class PipeReader(RobustStream, AsyncExitStack):
+class PipeReader(AsyncExitStack):
     """Read a named pipe and expose a stream reader over data."""
 
     def __init__(self, path: Path, *, own_pipe: bool = False):
-        RobustStream.__init__(
-            self,
+        super().__init__()
+        self._stream = RobustStream(
             connector=self._connect_pipe,
             name=type(self).__name__,
             timeout=5,
         )
-        AsyncExitStack.__init__(self)
         self._path = path
         self._own_pipe = own_pipe
         self._pipe: Optional[TextIOWrapper] = None
@@ -27,8 +25,7 @@ class PipeReader(RobustStream, AsyncExitStack):
     async def __aenter__(self):
         self.enter_context(self._pipe_creator())
         self.callback(self._close_pipe)
-        await RobustStream.__aenter__(self)
-        self.push_async_exit(partial(RobustStream.__aexit__, self))
+        await self.enter_async_context(self._stream)
         return self
 
     @contextmanager
@@ -55,3 +52,7 @@ class PipeReader(RobustStream, AsyncExitStack):
         # Open it as read-write to avoid having to re-open it for every message.
         self._pipe = open(os.open(str(self._path), os.O_RDWR | os.O_NONBLOCK))
         await asyncio.get_running_loop().connect_read_pipe(protocol_factory, self._pipe)
+
+    @property
+    def reader(self) -> asyncio.StreamReader:
+        return self._stream.reader
