@@ -1,6 +1,6 @@
 [project]
 name = "qbee-gpio"
-version = "3.1.0"
+version = "4.0.0"
 description = "Control an LCD display and amplifier relay for use in an AirPlay and/or Spotify Connect Raspberry Pi server."
 license = "MIT"
 readme = "README.md"
@@ -48,7 +48,6 @@ ignore = ["E501"]
 per-file-ignores = { "__init__.py" = ["F401"] }
 
 [tool.uv]
-default-groups = "all"
 build-backend = { module-name = "qbee_gpio", module-root = "" }
 
 [build-system]
