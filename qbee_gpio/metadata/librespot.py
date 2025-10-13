@@ -2,7 +2,7 @@ import base64
 import logging
 import re
 from pathlib import Path
-from typing import AsyncIterator, Optional
+from typing import AsyncIterator
 
 from qbee_gpio.metadata.interface import NowPlaying, NowPlayingPoller
 from qbee_gpio.metadata.pipe_reader import PipeReader
@@ -21,7 +21,7 @@ class LibrespotNowPlayingPoller(NowPlayingPoller):
     async def poll(self) -> AsyncIterator[NowPlaying]:
         async with PipeReader(self._path, own_pipe=True) as pipe_reader:
             logger.debug("started now playing poller")
-            last_event: Optional[NowPlaying] = None
+            last_event: NowPlaying | None = None
             reader = pipe_reader.reader
             while True:
                 data = await reader.readuntil(b"\t")
@@ -30,7 +30,7 @@ class LibrespotNowPlayingPoller(NowPlayingPoller):
                     last_event = event
                     yield event
 
-    def _decode(self, data: bytes) -> Optional[NowPlaying]:
+    def _decode(self, data: bytes) -> NowPlaying | None:
         if match := self.RE_METADATA.search(data.decode()):
             artist, album, title = tuple(
                 base64.b64decode(e).decode() for e in match.groups()

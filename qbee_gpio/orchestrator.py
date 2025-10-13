@@ -1,7 +1,6 @@
 import asyncio
 import logging.config
 from contextlib import AsyncExitStack
-from typing import List
 
 from concurrent_tasks import BackgroundTask, LoopExceptionHandler
 from gpiozero import OutputDevice
@@ -51,7 +50,7 @@ class QbeeOrchestrator(AsyncExitStack):
         self._poll_sound_task = (
             BackgroundTask(self._poll_sound) if self._sound_poller else None
         )
-        self._poll_now_playing_tasks: List[BackgroundTask] = (
+        self._poll_now_playing_tasks: list[BackgroundTask] = (
             [
                 BackgroundTask(
                     self._poll_now_playing,
@@ -70,10 +69,10 @@ class QbeeOrchestrator(AsyncExitStack):
             self.callback(self._on_switch.close)
             self.callback(self._standby_switch.close)
             self._standby_switch.on()
-        if self._display:
-            await self.enter_async_context(self._display)
         if self._standby_task:
             self.callback(self._standby_task.cancel)
+        if self._display:
+            await self.enter_async_context(self._display)
         for task in self._poll_now_playing_tasks:
             self.enter_context(task)
         if self._poll_sound_task:
