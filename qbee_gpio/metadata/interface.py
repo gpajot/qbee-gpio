@@ -3,19 +3,11 @@ from dataclasses import dataclass
 from typing import AsyncIterator
 
 
-@dataclass
+@dataclass(kw_only=True)
 class NowPlaying:
-    artist: str
-    album: str
-    title: str
-
-    def display(self, lines: int) -> str:
-        if lines == 1:
-            return self.title
-        elif lines == 2:
-            return f"{self.artist}\n{self.title}"
-        else:
-            return f"{self.artist}\n{self.album}\n{self.title}"
+    artist: str = ""
+    album: str = ""
+    title: str = ""
 
 
 class NowPlayingPoller(ABC):
@@ -23,4 +15,4 @@ class NowPlayingPoller(ABC):
 
     @abstractmethod
     async def poll(self) -> AsyncIterator[NowPlaying]:
-        yield NowPlaying("", "", "")
+        yield NowPlaying()

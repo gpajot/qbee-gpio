@@ -23,12 +23,6 @@ python -m venv ~/.qbee-env
 ~/.qbee-env/bin/python -m pip install qbee-gpio[gpio]
 ````
 
-For first time usage:
-```shell
-~/.qbee-env/bin/qbee --init-config
-```
-then change what you need in `~/.qbee.yaml`.
-
 ## Usage
 
 ```shell
