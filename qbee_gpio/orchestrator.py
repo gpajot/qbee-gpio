@@ -1,18 +1,13 @@
 import asyncio
 import logging.config
 from contextlib import AsyncExitStack
-from typing import List, Optional
+from typing import List
 
 from concurrent_tasks import BackgroundTask, LoopExceptionHandler
 from gpiozero import OutputDevice
 
 from qbee_gpio.config import QbeeConfig
-from qbee_gpio.gpio import GPIOLCDDisplay
-from qbee_gpio.metadata import (
-    LibrespotNowPlayingPoller,
-    NowPlayingPoller,
-    ShairportNowPlayingPoller,
-)
+from qbee_gpio.metadata import NowPlayingPoller
 from qbee_gpio.sound_poller import SoundPoller
 
 logger = logging.getLogger(__name__)
@@ -31,68 +26,54 @@ class QbeeOrchestrator(AsyncExitStack):
 
     def __init__(self, config: QbeeConfig):
         super().__init__()
-        self._cfg = config
-        self._lcd = (
-            GPIOLCDDisplay(
-                pin_register_select=self._cfg.lcd.pin_register_select,
-                pin_enable=self._cfg.lcd.pin_enable,
-                pin_data_4=self._cfg.lcd.pin_data_4,
-                pin_data_5=self._cfg.lcd.pin_data_5,
-                pin_data_6=self._cfg.lcd.pin_data_6,
-                pin_data_7=self._cfg.lcd.pin_data_7,
-                width=self._cfg.lcd.width,
-                lines=self._cfg.lcd.lines,
-            )
-            if self._cfg.lcd.enable
+        self._on_switch = (
+            OutputDevice(config.sound_detection.pin_on)
+            if config.sound_detection
             else None
         )
-        self._on_switch: Optional[OutputDevice] = None
-        self._standby_switch: Optional[OutputDevice] = None
+        self._standby_switch = (
+            OutputDevice(config.sound_detection.pin_standby)
+            if config.sound_detection
+            else None
+        )
         self._standby_task = (
-            BackgroundTask(self._standby) if self._cfg.sound_detection.enable else None
+            BackgroundTask(self._standby, config.sound_detection.standby_duration)
+            if config.sound_detection
+            else None
         )
         self._sound_poller = (
-            SoundPoller(
-                self._cfg.sound_detection.driver_path,
-            )
-            if self._cfg.sound_detection.enable
+            SoundPoller(config.sound_detection.driver_path)
+            if config.sound_detection
             else None
         )
 
+        self._display = config.display.get_display() if config.display else None
         self._poll_sound_task = (
             BackgroundTask(self._poll_sound) if self._sound_poller else None
         )
-        self._poll_now_playing_tasks: List[BackgroundTask] = []
-        if self._cfg.lcd.enable and self._cfg.lcd.shairport_metadata_path:
-            self._poll_now_playing_tasks.append(
+        self._poll_now_playing_tasks: List[BackgroundTask] = (
+            [
                 BackgroundTask(
                     self._poll_now_playing,
-                    ShairportNowPlayingPoller(self._cfg.lcd.shairport_metadata_path),
+                    poller,
                 )
-            )
-        if self._cfg.lcd.enable and self._cfg.lcd.librespot_metadata_path:
-            self._poll_now_playing_tasks.append(
-                BackgroundTask(
-                    self._poll_now_playing,
-                    LibrespotNowPlayingPoller(self._cfg.lcd.librespot_metadata_path),
-                )
-            )
-        self._now_playing = self._cfg.lcd.startup_message
+                for poller in config.display.get_now_playing_pollers()
+            ]
+            if config.display
+            else []
+        )
+
         self._stop_event = asyncio.Event()
 
     async def __aenter__(self):
-        if self._cfg.sound_detection.enable:
-            self._on_switch = self.enter_context(
-                OutputDevice(self._cfg.sound_detection.pin_on)
-            )
-            self._standby_switch = self.enter_context(
-                OutputDevice(self._cfg.sound_detection.pin_standby)
-            )
+        if self._on_switch and self._standby_switch:
+            self.callback(self._on_switch.close)
+            self.callback(self._standby_switch.close)
             self._standby_switch.on()
-        if self._lcd:
-            await self.enter_async_context(self._lcd)
+        if self._display:
+            await self.enter_async_context(self._display)
         if self._standby_task:
-            self.enter_context(self._standby_task)
+            self.callback(self._standby_task.cancel)
         for task in self._poll_now_playing_tasks:
             self.enter_context(task)
         if self._poll_sound_task:
@@ -111,8 +92,6 @@ class QbeeOrchestrator(AsyncExitStack):
         logger.debug("stopping...")
         self._stop_event.set()
 
-    # Sound detection.
-
     async def _poll_sound(self) -> None:
         assert self._sound_poller
         assert self._standby_task
@@ -121,48 +100,24 @@ class QbeeOrchestrator(AsyncExitStack):
                 logger.debug("cancelling standby mode")
                 self._standby_task.cancel()
                 await self._switch(True)
-                await self._display_now_playing()
             else:
-                if self._lcd:
-                    await self._lcd.clear()
+                if self._display:
+                    await self._display.clear()
                 self._standby_task.create()
 
-    async def _standby(self) -> None:
-        assert self._cfg.sound_detection
-        if self._cfg.sound_detection.standby_duration is not None:
-            logger.debug("entering standby mode")
-            await asyncio.sleep(self._cfg.sound_detection.standby_duration)
-            logger.debug("exiting standby mode")
-            await self._switch(False)
-        if self._cfg.sound_detection.shutdown_command:
-            logger.info("shutting down system...")
-            await asyncio.create_subprocess_shell(
-                self._cfg.sound_detection.shutdown_command,
-            )
-
-    # LCD.
+    async def _standby(self, duration: float) -> None:
+        logger.debug("entering standby mode")
+        await asyncio.sleep(duration)
+        logger.debug("exiting standby mode")
+        await self._switch(False)
 
     async def _poll_now_playing(self, poller: NowPlayingPoller) -> None:
+        assert self._display
         async for event in poller.poll():
-            self._now_playing = event.display(self._cfg.lcd.lines)
-            await self._display_now_playing()
-
-    async def _display_now_playing(self) -> None:
-        if not self._lcd:
-            return
-        await self._lcd.display(self._now_playing)
-
-    # Switches.
+            await self._display.display_now_playing(event)
 
     async def _switch(self, value: bool) -> None:
         if self._standby_switch and self._on_switch:
             logger.debug("turning %s", "on" if value else "off")
             self._on_switch.value = value
             self._standby_switch.value = not value
-        # Reinitialize LCD even if it doesn't turn off with the amp as I get
-        # corrupted display when it has been idle for a while...
-        if self._lcd:
-            if value:
-                await self._lcd.init()
-            else:
-                await self._lcd.close()

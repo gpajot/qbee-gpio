@@ -4,7 +4,7 @@ version = "4.0.0"
 description = "Control an LCD display and amplifier relay for use in an AirPlay and/or Spotify Connect Raspberry Pi server."
 license = "MIT"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 authors = [
     { name = "Gabriel Pajot", email = "gab@lescactus.eu" },
 ]
@@ -14,7 +14,7 @@ dependencies = [
     "asyncinotify >=4.0,<4.3 ; python_version < '4'",
     "concurrent-tasks >=1.16.2,<2",
     "gpiozero >=2.0.1,<2.1",
-    "zenconfig[yaml,attrs] >=2.1.0,<3",
+    "zenconfig[yaml,pydantic] >=2.1.0,<3",
 ]
 license-files = ["LICENSE"]
 
@@ -23,7 +23,7 @@ gpio = [ "lgpio >=0.2.2.0,<0.2.3" ]
 
 [dependency-groups]
 dev = [
-    "mypy ==1.17.1",
+    "mypy ==1.18.2",
     "pre-commit ==4.3.0",
     "pytest ==8.4.2",
     "pytest-asyncio ==1.2.0",
@@ -41,6 +41,7 @@ check_untyped_defs = true
 ignore_missing_imports = true
 warn_redundant_casts = true
 warn_unused_ignores = true
+plugins = ["pydantic.mypy"]
 
 [tool.ruff.lint]
 select = ["A", "B", "E", "F", "I", "PT"]
@@ -50,6 +51,10 @@ per-file-ignores = { "__init__.py" = ["F401"] }
 [tool.uv]
 build-backend = { module-name = "qbee_gpio", module-root = "" }
 
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_untyped_fields = true
 [build-system]
-requires = ["uv_build>=0.8.15,<0.9"]
+requires = ["uv_build>=0.9.2,<0.10"]
 build-backend = "uv_build"

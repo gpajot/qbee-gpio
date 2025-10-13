@@ -1,67 +1,50 @@
-import logging
 from pathlib import Path
-from typing import ClassVar, Literal, Optional
+from typing import ClassVar, Iterator, Literal
 
-import attrs
 import zenconfig
+from pydantic import BaseModel, Field
+
+from qbee_gpio.gpio import Display, GPIOLCDDisplay, LCDConfig
+from qbee_gpio.metadata import (
+    LibrespotNowPlayingPoller,
+    NowPlayingPoller,
+    ShairportNowPlayingPoller,
+)
 
 
-@attrs.define
-class LCDConfig:
-    # Change this to `False` to disable LCD.
-    enable: bool = True
-    # Size.
-    width: int = 16
-    lines: Literal[1, 2, 4] = 2
+class DisplayConfig(BaseModel):
+    metadata_pipe_paths: dict[Literal["shairport", "librespot"], Path]
+    lcd: LCDConfig
+
+    def get_display(self) -> Display | None:
+        return GPIOLCDDisplay(self.lcd)
+
+    def get_now_playing_pollers(self) -> Iterator[NowPlayingPoller]:
+        for source, path in self.metadata_pipe_paths.items():
+            match source:
+                case "shairport":
+                    yield ShairportNowPlayingPoller(path)
+                case "librespot":
+                    yield LibrespotNowPlayingPoller(path)
+
+
+class SoundDetectionConfig(BaseModel):
     # GPIO PIN configuration (BCM mode).
-    pin_register_select: int = 23
-    pin_enable: int = 24
-    pin_data_4: int = 4
-    pin_data_5: int = 25
-    pin_data_6: int = 17
-    pin_data_7: int = 18
-    shairport_metadata_path: Optional[Path] = attrs.field(
-        default=Path("/tmp/shairport-sync-metadata"),
-        converter=lambda e: Path(e) if e else None,
-    )
-    librespot_metadata_path: Optional[Path] = attrs.field(
-        default=Path("/tmp/librespot-metadata"),
-        converter=lambda e: Path(e) if e else None,
-    )
-    startup_message: str = "Qbee"
-
-
-@attrs.define
-class SoundDetectionConfig:
-    # Change this to `True` to disable sound detection.
-    enable: bool = True
+    pin_on: int
+    pin_standby: int
     # We'll watch OPEN and CLOSE_WRITE events to detect sound output.
-    driver_path: Path = attrs.field(
-        default=Path("/dev/snd/pcmC0D0p"),
-        converter=Path,
-    )
+    driver_path: Path
     # Number of seconds to keep amp on after sound has stopped.
-    standby_duration: Optional[float] = 600
-    # Change this as needed or set to None to disable shutdown after standby.
-    # The `sudo shutdown -h now` command will work if:
-    #   - `$_USER_ ALL = (root) NOPASWD: /usr/sbin/shutdown` has been added to sudoers
-    #   - or the user is root
-    shutdown_command: Optional[str] = None
-    # GPIO PIN configuration (BCM mode).
-    pin_on: int = 27
-    pin_standby: int = 22
+    standby_duration: float = 600
 
 
-@attrs.define
-class QbeeConfig(zenconfig.Config):
+class QbeeConfig(BaseModel, zenconfig.Config):
     PATH: ClassVar[str] = "~/.qbee.yaml"
 
-    sound_detection: SoundDetectionConfig = SoundDetectionConfig()
-    lcd: LCDConfig = LCDConfig()
-
-    # Logging.
-    logging: dict = attrs.field(
-        factory=lambda: {
+    sound_detection: SoundDetectionConfig | None = None
+    display: DisplayConfig | None = None
+    logging: dict = Field(
+        default_factory=lambda: {
             "version": 1,
             "disable_existing_loggers": False,
             "formatters": {
@@ -78,8 +61,8 @@ class QbeeConfig(zenconfig.Config):
                 },
             },
             "root": {
-                "level": logging.getLevelName(logging.INFO),
+                "level": "INFO",
                 "handlers": ["console"],
             },
-        },
+        }
     )

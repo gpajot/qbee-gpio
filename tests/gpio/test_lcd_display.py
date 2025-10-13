@@ -1,6 +1,6 @@
 import pytest
 
-from qbee_gpio.gpio.lcd_display import GPIOLCDDisplay
+from qbee_gpio.gpio.lcd_display import GPIOLCDDisplay, LCDConfig, LCDPinConfig, LCDPins
 
 
 @pytest.mark.parametrize(
@@ -9,23 +9,23 @@ from qbee_gpio.gpio.lcd_display import GPIOLCDDisplay
         (8, "Hello\nQbee!", str.ljust, ["Hello   ", "Qbee!   "]),
         (8, "Hello\nQbee!", str.center, [" Hello  ", " Qbee!  "]),
         (8, "A quite longer first line", str.ljust, ["A quite ", "        "]),
-        (8, "éèîå", str.ljust, ["eeia    ", "        "]),
+        (
+            16,
+            "A quite longer first line",
+            str.ljust,
+            ["A quite longer f", "                "],
+        ),
+        (4, "éèîå", str.ljust, ["eeia", "    "]),
     ],
 )
 async def test_display(width, message, align, expected, mocker):
-    lcd = GPIOLCDDisplay(
-        pin_register_select=1,
-        pin_enable=2,
-        pin_data_4=4,
-        pin_data_5=5,
-        pin_data_6=6,
-        pin_data_7=7,
-        width=width,
-        lines=2,
+    pin_cfg = LCDPinConfig(
+        register_select=1, enable=2, data_4=4, data_5=5, data_6=6, data_7=7
     )
-    lcd._init = True
+    lcd = GPIOLCDDisplay(LCDConfig(width=width, pins=pin_cfg))
+    lcd._pins = LCDPins(pin_cfg)
     mock_print_lines = mocker.patch.object(lcd, "_print_lines")
 
-    await lcd.display(message, align=align)
+    await lcd._display(message, align=align)
 
     mock_print_lines.assert_awaited_once_with(expected)
