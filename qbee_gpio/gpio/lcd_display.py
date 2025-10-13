@@ -1,7 +1,7 @@
 import asyncio
 import unicodedata
 from time import monotonic, sleep
-from typing import Callable, Literal, Optional, Self, Sequence, Tuple, TypeAlias, cast
+from typing import Callable, Literal, Self, Sequence, cast
 
 from gpiozero import OutputDevice
 from pydantic import BaseModel
@@ -9,8 +9,8 @@ from pydantic import BaseModel
 from qbee_gpio.gpio.display import Display
 from qbee_gpio.metadata import NowPlaying
 
-Bit: TypeAlias = Literal[0, 1]
-HalfByte: TypeAlias = tuple[Bit, Bit, Bit, Bit]
+type Bit = Literal[0, 1]
+type HalfByte = tuple[Bit, Bit, Bit, Bit]
 
 
 class LCDPinConfig(BaseModel):
@@ -181,9 +181,9 @@ class GPIOLCDDisplay(Display):
     async def _write(
         self,
         high_bits: HalfByte,
-        low_bits: Optional[HalfByte] = None,
+        low_bits: HalfByte | None = None,
         is_cmd: bool = True,
-        wait_for: Optional[float] = None,
+        wait_for: float | None = None,
     ) -> None:
         assert self._pins
         self._pins.register_select.value = not is_cmd
@@ -218,7 +218,7 @@ class GPIOLCDDisplay(Display):
         self._pins.enable.value = False
 
 
-def get_bits(byte: int) -> Tuple[HalfByte, HalfByte]:
+def get_bits(byte: int) -> tuple[HalfByte, HalfByte]:
     str_bits = tuple(map(int, bin(byte).removeprefix("0b").zfill(8)))
     return cast(HalfByte, str_bits[:4]), cast(HalfByte, str_bits[4:8])
 

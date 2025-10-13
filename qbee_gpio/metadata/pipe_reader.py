@@ -3,7 +3,7 @@ import os
 from contextlib import AsyncExitStack, contextmanager
 from io import TextIOWrapper
 from pathlib import Path
-from typing import Iterator, Optional
+from typing import Iterator
 
 from concurrent_tasks import RobustStream
 
@@ -20,7 +20,7 @@ class PipeReader(AsyncExitStack):
         )
         self._path = path
         self._own_pipe = own_pipe
-        self._pipe: Optional[TextIOWrapper] = None
+        self._pipe: TextIOWrapper | None = None
 
     async def __aenter__(self):
         self.enter_context(self._pipe_creator())

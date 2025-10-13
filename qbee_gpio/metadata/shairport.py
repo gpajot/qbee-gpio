@@ -2,7 +2,7 @@ import base64
 import logging
 import re
 from pathlib import Path
-from typing import AsyncIterator, Optional
+from typing import AsyncIterator
 
 from qbee_gpio.metadata.interface import NowPlaying, NowPlayingPoller
 from qbee_gpio.metadata.pipe_reader import PipeReader
@@ -19,7 +19,7 @@ class ShairportNowPlayingPoller(NowPlayingPoller):
     async def poll(self) -> AsyncIterator[NowPlaying]:
         async with PipeReader(self._path) as pipe_reader:
             logger.debug("started now playing poller")
-            last_event: Optional[NowPlaying] = None
+            last_event: NowPlaying | None = None
             reader = pipe_reader.reader
             while True:
                 data = await reader.readuntil(
@@ -31,7 +31,7 @@ class ShairportNowPlayingPoller(NowPlayingPoller):
                     yield event
 
     @staticmethod
-    def _get_metadata(data: bytes, code: bytes) -> Optional[str]:
+    def _get_metadata(data: bytes, code: bytes) -> str | None:
         match = re.search(
             f"<item><type>{b'core'.hex()}</type><code>{code.hex()}</code><length>[0-9]+</length>\n"
             '<data encoding="base64">\n(.*?)</data></item>',
@@ -41,7 +41,7 @@ class ShairportNowPlayingPoller(NowPlayingPoller):
             return None
         return base64.b64decode(match.groups()[0]).decode()
 
-    def _decode(self, data: bytes) -> Optional[NowPlaying]:
+    def _decode(self, data: bytes) -> NowPlaying | None:
         if (
             (artist := self._get_metadata(data, b"asar"))
             and (album := self._get_metadata(data, b"asal"))
