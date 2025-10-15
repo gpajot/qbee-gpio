@@ -17,8 +17,13 @@ Additional documentation:
 
 ## Running
 
-```commandline
-docker run -v $CONFIG_DIR:/app/config:ro gpajot/qbee-gpio
+```shell
+docker run -d --name qbee \
+  --network host \
+  --device=/dev/gpiomem \
+  -v $CONFIG_DIR:/app/config:ro \
+  --restart always \
+  gpajot/qbee-gpio
 ```
 
 This expects a config file located at `$CONFIG_DIR/conf.yaml`.

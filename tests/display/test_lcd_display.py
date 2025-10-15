@@ -1,6 +1,11 @@
 import pytest
 
-from qbee_gpio.gpio.lcd_display import GPIOLCDDisplay, LCDConfig, LCDPinConfig, LCDPins
+from qbee_gpio.display.lcd_display import (
+    GPIOLCDDisplay,
+    LCDConfig,
+    LCDPinConfig,
+    LCDPins,
+)
 
 
 @pytest.mark.parametrize(
