@@ -1,3 +1,0 @@
-from qbee_gpio.metadata.interface import NowPlaying, NowPlayingPoller
-from qbee_gpio.metadata.librespot import LibrespotNowPlayingPoller
-from qbee_gpio.metadata.shairport import ShairportNowPlayingPoller

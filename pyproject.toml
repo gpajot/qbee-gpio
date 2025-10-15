@@ -4,21 +4,17 @@ version = "4.0.0"
 description = "Control an LCD display and amplifier relay for use in an AirPlay and/or Spotify Connect Raspberry Pi server."
 license = "MIT"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 authors = [
     { name = "Gabriel Pajot", email = "gab@lescactus.eu" },
 ]
 urls = { repository = "https://github.com/gpajot/qbee-gpio" }
 dependencies = [
-    "asyncinotify >=4.0,<4.3 ; python_version < '4'",
     "concurrent-tasks >=1.16.2,<2",
     "gpiozero >=2.0.1,<2.1",
     "zenconfig[yaml,pydantic] >=2.1.0,<3",
 ]
 license-files = ["LICENSE"]
-
-[project.optional-dependencies]
-gpio = [ "lgpio >=0.2.2.0,<0.2.3" ]
 
 [dependency-groups]
 dev = [

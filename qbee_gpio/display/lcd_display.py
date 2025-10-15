@@ -6,8 +6,8 @@ from typing import Callable, Literal, Self, Sequence, cast
 from gpiozero import OutputDevice
 from pydantic import BaseModel
 
-from qbee_gpio.gpio.display import Display
-from qbee_gpio.metadata import NowPlaying
+from qbee_gpio.display.interface import Display
+from qbee_gpio.events import Song
 
 type Bit = Literal[0, 1]
 type HalfByte = tuple[Bit, Bit, Bit, Bit]
@@ -137,16 +137,16 @@ class GPIOLCDDisplay(Display):
             # Wait for more than 1.52ms.
             await self._write((0, 0, 0, 0), (0, 0, 0, 1), wait_for=0.002)
 
-    async def display_now_playing(self, metadata: NowPlaying) -> None:
+    async def display_now_playing(self, song: Song) -> None:
         if not self._pins:
             raise RuntimeError("LCD is not initialized")
         match self._lines:
             case 1:
-                message = metadata.title
+                message = song.title
             case 2:
-                message = f"{metadata.artist}\n{metadata.title}"
+                message = f"{song.artist}\n{song.title}"
             case _:
-                message = f"{metadata.artist}\n{metadata.album}\n{metadata.title}"
+                message = f"{song.artist}\n{song.album}\n{song.title}"
         await self._display(message)
 
     async def _display(
@@ -204,7 +204,7 @@ class GPIOLCDDisplay(Display):
 
     def _send_half_byte(self, bits: HalfByte) -> None:
         assert self._pins
-        for pin, bit in zip(self._pins.data, bits, strict=False):
+        for pin, bit in zip(self._pins.data, reversed(bits), strict=True):
             pin.value = bit
 
     def _pulse_enable(self) -> None:
