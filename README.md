@@ -32,3 +32,20 @@ docker run -d \
 
 This expects a config file located at `~/qbee/conf.yaml`.
 See [all config options](./qbee_gpio/config.py)
+
+A typical config would look like:
+
+```yaml
+power:
+  pin_on: 27
+  pin_standby: 22
+display:
+  lcd:
+    pins:
+      data_4: 9
+      data_5: 25
+      data_6: 17
+      data_7: 10
+      enable: 24
+      register_select: 23
+```
