@@ -1,7 +1,7 @@
 [project]
 name = "qbee_gpio"
 version = "4.0.0"
-description = "Control an LCD display and amplifier relay for use in an AirPlay and/or Spotify Connect Raspberry Pi server."
+description = "Control a display and amplifier relay for use in an AirPlay and/or Spotify Connect Raspberry Pi server."
 license = "MIT"
 readme = "README.md"
 requires-python = ">=3.14"
@@ -24,8 +24,6 @@ dev = [
     "pytest-asyncio ==1.2.0",
     "pytest-mock ==3.15.1",
     "ruff ==0.14.1",
-    "mypy ==1.18.2",
-    "pre-commit ==4.3.0",
 ]
 
 [tool.pytest.ini_options]
