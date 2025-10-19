@@ -18,13 +18,17 @@ Additional documentation:
 ## Running
 
 ```shell
-docker run -d --name qbee \
-  --network host \
-  --device=/dev/gpiomem \
-  -v $CONFIG_DIR:/app/config:ro \
+docker run -d \
+  --name qbee \
   --restart always \
-  gpajot/qbee-gpio
+  --network host \
+  -e LG_WD=/tmp \
+  --device=/dev/gpiochip0 \
+  -v ~/qbee:/app/config:ro \
+  --user $(stat -c '%u:%g' ~) \
+  --group-add $(stat -c '%g' /dev/gpiochip0) \
+  gpajot/qbee-gpio:latest
 ```
 
-This expects a config file located at `$CONFIG_DIR/conf.yaml`.
+This expects a config file located at `~/qbee/conf.yaml`.
 See [all config options](./qbee_gpio/config.py)

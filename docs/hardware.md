@@ -21,21 +21,6 @@ To disable the built-in sound card, edit `/etc/modprobe.d/raspi-blacklist.conf` 
 blacklist snd_bcm2835
 ```
 
-Edit `/etc/asound.conf` to set the default sound card for alsa, add:
-```
-defaults.pcm.card 0
-defaults.ctl.card 0
-```
-
-## Disable Pi GPU
-
-This should help give more power to the CPU, useful for older Pis.
-Edit `/boot/firmware/config.txt` and add:
-```
-gpu_mem=16
-gpu_freq=250
-```
-
 ## One-button start and stop
 
 Allow turning on and off the pi with a push button.
