@@ -38,11 +38,11 @@ class Power(ExitStack):
         return self
 
     async def process_playing(self, playing: Playing) -> None:
-        if playing and not self._on_switch.value:
+        if playing:
             logger.debug("cancelling standby mode if needed")
             self._standby_task.cancel()
             await self._switch(True)
-        elif not playing and self._on_switch.value:
+        else:
             self._standby_task.create()
 
     async def _standby(self, duration: float) -> None:
@@ -53,6 +53,8 @@ class Power(ExitStack):
         await self._switch(False)
 
     async def _switch(self, value: bool) -> None:
+        if self._on_switch.value == value:
+            return
         logger.debug("turning %s", "on" if value else "off")
         self._on_switch.value = value
         self._standby_switch.value = not value
