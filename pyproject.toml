@@ -1,6 +1,6 @@
 [project]
 name = "qbee_gpio"
-version = "4.0.2"
+version = "4.0.3"
 description = "Control a display and amplifier relay for use in an AirPlay and/or Spotify Connect Raspberry Pi server."
 license = "MIT"
 readme = "README.md"
