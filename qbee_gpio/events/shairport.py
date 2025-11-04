@@ -1,6 +1,6 @@
 from typing import NotRequired, TypedDict
 
-from qbee_gpio.events.interface import Event, Playing, Song, User
+from qbee_gpio.events.interface import Event, Playing, Song
 
 
 class _Song(TypedDict):
@@ -15,13 +15,6 @@ _SONG: _Song = {}
 def parse(data: bytes) -> Event | None:
     """Data is sent by type so we need to process a full batch of messages to have the complete stuff."""
     global _SONG
-    if data.startswith(b"ssncsnam"):
-        return Event(
-            "shairport",
-            User(data.removeprefix(b"ssncsnam").decode("utf-8") or "unknown"),
-        )
-    if data.startswith(b"ssncdisc"):
-        return Event("shairport", User(""))
     if data == b"ssncpbeg":
         return Event("shairport", Playing(True))
     if data == b"ssncpend":

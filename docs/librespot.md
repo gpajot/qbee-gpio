@@ -34,9 +34,5 @@ elif [ "$PLAYER_EVENT" = 'playing' ]; then
   echo -n "librespot:playing" >/dev/udp/127.0.0.1/8000
 elif [ "$PLAYER_EVENT" = 'paused' ]; then
   echo -n "librespot:stopped" >/dev/udp/127.0.0.1/8000
-elif [ "$PLAYER_EVENT" = 'session_connected' ]; then
-  echo -n "librespot:user:unknown" >/dev/udp/127.0.0.1/8000
-elif [ "$PLAYER_EVENT" = 'session_disconnected' ]; then
-  echo -n "librespot:user:" >/dev/udp/127.0.0.1/8000
 fi
 ```

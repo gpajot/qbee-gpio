@@ -4,7 +4,7 @@ import pytest
 
 from qbee_gpio.config import QbeeConfig
 from qbee_gpio.display import Display
-from qbee_gpio.events import Event, Playing, Song, User
+from qbee_gpio.events import Event, Playing, Song
 from qbee_gpio.orchestrator import QbeeOrchestrator, Session
 from qbee_gpio.power import Power, PowerConfig
 
@@ -16,7 +16,7 @@ def events(mocker):
 
 @pytest.fixture
 def display(mocker):
-    return mocker.MagicMock(spec=Display)
+    return mocker.Mock(spec=Display)
 
 
 @pytest.fixture
@@ -34,19 +34,14 @@ def power(mocker):
 async def _send_events(orchestrator):
     assert orchestrator._session is None
     await orchestrator._process(Event("librespot", Playing(True)))
-    await orchestrator._process(Event("librespot", Song(title="ignored")))
-    await orchestrator._process(Event("librespot", User("test")))
     await orchestrator._process(Event("librespot", Song(title="name")))
     await orchestrator._process(Event("librespot", Playing(True)))
     await orchestrator._process(Event("librespot", Playing(False)))
     assert orchestrator._session == Session(
         "librespot",
-        User("test"),
         Song(title="name"),
         Playing(False),
     )
-    await orchestrator._process(Event("librespot", User("")))
-    assert orchestrator._session is None
 
 
 async def test_with_only_power(get_display, power):
@@ -67,8 +62,9 @@ async def test_with_only_display(get_display, display):
     async with QbeeOrchestrator(QbeeConfig()) as orchestrator:
         assert orchestrator._power is None
         await _send_events(orchestrator)
-        display.clear.assert_called_once()
-        display.display_now_playing.assert_called_once_with(Song(title="name"))
+    assert display.init.call_count == 2
+    assert display.stop.call_count == 2
+    display.display_now_playing.assert_called_once_with(Song(title="name"))
 
 
 async def test_full(get_display, display, power):
@@ -77,9 +73,10 @@ async def test_full(get_display, display, power):
         QbeeConfig(power=PowerConfig(pin_on=1, pin_standby=2))
     ) as orchestrator:
         await _send_events(orchestrator)
-        assert power.process_playing.call_args_list == [
-            call(Playing(True)),
-            call(Playing(False)),
-        ]
-        display.clear.assert_called_once()
-        display.display_now_playing.assert_called_once_with(Song(title="name"))
+    assert power.process_playing.call_args_list == [
+        call(Playing(True)),
+        call(Playing(False)),
+    ]
+    assert display.init.call_count == 2
+    assert display.stop.call_count == 2
+    display.display_now_playing.assert_called_once_with(Song(title="name"))

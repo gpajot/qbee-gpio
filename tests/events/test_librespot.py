@@ -1,4 +1,4 @@
-from qbee_gpio.events.interface import Event, Playing, Song, User
+from qbee_gpio.events.interface import Event, Playing, Song
 from qbee_gpio.events.librespot import parse
 
 
@@ -16,7 +16,5 @@ async def test_parse():
             title="Money - 2011 Remastered Version",
         ),
     )
-    assert parse(b"user:test") == Event("librespot", User("test"))
-    assert parse(b"user:") == Event("librespot", User(""))
     assert parse(b"playing") == Event("librespot", Playing(True))
     assert parse(b"stopped") == Event("librespot", Playing(False))
