@@ -58,6 +58,10 @@ class QbeeOrchestrator(AsyncExitStack):
                     if self._display:
                         if event.data:
                             await self._display.init()
+                            if self._session.song:
+                                await self._display.display_now_playing(
+                                    self._session.song
+                                )
                         else:
                             await self._display.stop()
                     if self._power:
