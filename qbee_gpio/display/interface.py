@@ -9,4 +9,5 @@ class Display(ABC):
     @abstractmethod
     async def stop(self) -> None: ...
     @abstractmethod
-    async def display_now_playing(self, song: Song) -> None: ...
+    async def display_now_playing(self, song: Song) -> None:
+        """:raises RuntimeError if display is not initialized."""

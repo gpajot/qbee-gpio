@@ -63,7 +63,7 @@ async def test_with_only_display(get_display, display):
         assert orchestrator._power is None
         await _send_events(orchestrator)
     assert display.init.call_count == 2
-    assert display.stop.call_count == 2
+    assert display.stop.call_count == 3
     display.display_now_playing.assert_called_once_with(Song(title="name"))
 
 
@@ -78,5 +78,5 @@ async def test_full(get_display, display, power):
         call(Playing(False)),
     ]
     assert display.init.call_count == 2
-    assert display.stop.call_count == 2
+    assert display.stop.call_count == 3
     display.display_now_playing.assert_called_once_with(Song(title="name"))

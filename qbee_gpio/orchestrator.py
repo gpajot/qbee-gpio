@@ -1,3 +1,4 @@
+import contextlib
 import logging.config
 from contextlib import AsyncExitStack
 from dataclasses import dataclass
@@ -43,6 +44,7 @@ class QbeeOrchestrator(AsyncExitStack):
             self.enter_context(self._power)
         if self._display:
             await self._display.init()
+            await self._display.stop()
             self.push_async_callback(self._display.stop)
         await self.enter_async_context(self._udp_events)
         return self
@@ -71,4 +73,5 @@ class QbeeOrchestrator(AsyncExitStack):
                     logger.debug("now playing: %r", event.data)
                     self._session.song = event.data
                     if self._display:
-                        await self._display.display_now_playing(event.data)
+                        with contextlib.suppress(RuntimeError):
+                            await self._display.display_now_playing(event.data)
