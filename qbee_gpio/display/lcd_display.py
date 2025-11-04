@@ -86,10 +86,10 @@ class GPIOLCDDisplay(Display):
         await self._exec(self._init)
 
     def _init(self) -> None:
-        # No need to wait here as if the PI is booted power is already high enough.
         if self._pins:
             return
         self._pins = LCDPins(self._pin_cfg)
+        # No need to wait here as if the PI is booted power is already high enough.
         # Send 3 times the same command to ensure 8-bit mode.
         self._write(
             (0, 0, 1, 1),
