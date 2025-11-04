@@ -2,9 +2,6 @@ from dataclasses import dataclass
 from typing import Literal
 
 
-class User(str): ...
-
-
 @dataclass(kw_only=True, frozen=True)
 class Song:
     artist: str = ""
@@ -21,4 +18,4 @@ type Source = Literal["librespot", "shairport"]
 @dataclass(frozen=True)
 class Event:
     source: Source
-    data: User | Song | Playing
+    data: Song | Playing

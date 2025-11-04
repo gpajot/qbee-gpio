@@ -33,4 +33,4 @@ async def test_display(width, message, align, expected, mocker):
 
     await lcd._display(message, align=align)
 
-    mock_print_lines.assert_awaited_once_with(expected)
+    mock_print_lines.assert_called_once_with(expected)

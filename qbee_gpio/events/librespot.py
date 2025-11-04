@@ -1,11 +1,10 @@
 import re
 
-from qbee_gpio.events.interface import Event, Playing, Song, User
+from qbee_gpio.events.interface import Event, Playing, Song
 
 _RE_SONG = re.compile(
     r"artists:(?P<artists>.*?),album:(?P<album>.*?),title:(?P<title>.*)"
 )
-_RE_USER = re.compile(r"user:(.*)")
 
 
 def parse(data: bytes) -> Event | None:
@@ -24,6 +23,4 @@ def parse(data: bytes) -> Event | None:
                 title=metadata["title"],
             ),
         )
-    elif match := _RE_USER.search(data.decode("utf-8")):
-        return Event("librespot", User(match.groups()[0]))
     return None

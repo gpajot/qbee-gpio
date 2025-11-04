@@ -1,7 +1,8 @@
 import asyncio
 import unicodedata
+from functools import partial
 from time import monotonic, sleep
-from typing import Callable, Literal, Self, Sequence, cast
+from typing import Callable, Literal, Sequence, cast
 
 from gpiozero import OutputDevice
 from pydantic import BaseModel
@@ -70,76 +71,86 @@ class GPIOLCDDisplay(Display):
         self._last_cmd_start = 0.0
         self._last_cmd_wait = 0.0
 
-    async def __aenter__(self) -> Self:
-        if self._pins:
-            return self
-        self._pins = LCDPins(self._pin_cfg)
+    async def _exec[**P, R](
+        self,
+        func: Callable[P, R],
+        *args: P.args,
+        **kwargs: P.kwargs,
+    ) -> R:
         async with self._lock:
-            # Init LCD.
-            # No need to wait here as if the PI is booted power is already high enough.
-            # Send 3 times the same command to ensure 8-bit mode.
-            await self._write(
-                (0, 0, 1, 1),
-                # Wait more than 4.1ms here as per specs.
-                wait_for=0.005,
+            return await asyncio.get_running_loop().run_in_executor(
+                None, partial(func, *args, **kwargs)
             )
-            await self._write(
-                (0, 0, 1, 1),
-                # Wait more than 100µs here as per specs.
-                wait_for=0.00011,
-            )
-            await self._write((0, 0, 1, 1))
-            # Now switch to 4-bit.
-            await self._write((0, 0, 1, 0))
-            # Function set.
-            await self._write(
-                (0, 0, 1, 0),
-                (
-                    1 if self._lines > 1 else 0,
-                    1 if self._line_height != 8 else 0,
-                    0,
-                    0,
-                ),
-            )
-            # Display on/off control.
-            await self._write(
-                (0, 0, 0, 0),
-                (
-                    1,
-                    1,  # Screen on.
-                    0,  # Cursor off.
-                    0,  # Cursor blink off.
-                ),
-            )
-            # Entry mode set.
-            await self._write(
-                (0, 0, 0, 0),
-                (
-                    0,
-                    1,
-                    1,  # Cursor moves right.
-                    0,  # Display does not shift.
-                ),
-            )
-        await self.clear()
-        return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def init(self) -> None:
+        await self._exec(self._init)
+
+    def _init(self) -> None:
+        # No need to wait here as if the PI is booted power is already high enough.
+        if self._pins:
+            return
+        self._pins = LCDPins(self._pin_cfg)
+        # Send 3 times the same command to ensure 8-bit mode.
+        self._write(
+            (0, 0, 1, 1),
+            # Wait more than 4.1ms here as per specs.
+            wait_for=0.005,
+        )
+        self._write(
+            (0, 0, 1, 1),
+            # Wait more than 100µs here as per specs.
+            wait_for=0.00011,
+        )
+        self._write((0, 0, 1, 1))
+        # Now switch to 4-bit.
+        self._write((0, 0, 1, 0))
+        # Function set.
+        self._write(
+            (0, 0, 1, 0),
+            (
+                1 if self._lines > 1 else 0,
+                1 if self._line_height != 8 else 0,
+                0,
+                0,
+            ),
+        )
+        # Display on/off control.
+        self._write(
+            (0, 0, 0, 0),
+            (
+                1,
+                1,  # Screen on.
+                0,  # Cursor off.
+                0,  # Cursor blink off.
+            ),
+        )
+        # Entry mode set.
+        self._write(
+            (0, 0, 0, 0),
+            (
+                0,
+                1,
+                1,  # Cursor moves right.
+                0,  # Display does not shift.
+            ),
+        )
+        self._clear()
+
+    async def stop(self):
+        await self._exec(self._stop)
+
+    def _stop(self) -> None:
         if not self._pins:
             return
-        await self.clear()
+        self._clear()
         self._pins.close()
+        self._pins = None
 
-    async def clear(self) -> None:
-        if not self._pins:
-            raise RuntimeError("LCD is not initialized")
-        async with self._lock:
-            # Wait for more than 1.52ms.
-            await self._write((0, 0, 0, 0), (0, 0, 0, 1), wait_for=0.002)
+    def _clear(self) -> None:
+        # Wait for more than 1.52ms.
+        self._write((0, 0, 0, 0), (0, 0, 0, 1), wait_for=0.002)
 
     async def display_now_playing(self, song: Song) -> None:
-        if not self._pins:
-            raise RuntimeError("LCD is not initialized")
         match self._lines:
             case 1:
                 message = song.title
@@ -167,18 +178,19 @@ class GPIOLCDDisplay(Display):
         lines = [
             align(remove_accents(line[: self._width]), self._width) for line in lines
         ]
-        async with self._lock:
-            await self._print_lines(lines)
+        await self._exec(self._print_lines, lines)
 
-    async def _print_lines(self, lines: Sequence[str]) -> None:
+    def _print_lines(self, lines: Sequence[str]) -> None:
+        if not self._pins:
+            raise RuntimeError("LCD is not initialized")
         for i, line in enumerate(lines):
-            await self._write(
+            self._write(
                 *get_bits(0x80 + self._line_addresses[i]),
             )
             for char in line:
-                await self._write(*get_bits(ord(char)), is_cmd=False)
+                self._write(*get_bits(ord(char)), is_cmd=False)
 
-    async def _write(
+    def _write(
         self,
         high_bits: HalfByte,
         low_bits: HalfByte | None = None,
@@ -190,7 +202,7 @@ class GPIOLCDDisplay(Display):
         self._send_half_byte(high_bits)
         # Wait until enough time has passed for the previous command to be taken into account.
         if (wait := self._last_cmd_wait - (monotonic() - self._last_cmd_start)) > 0:
-            await asyncio.sleep(wait)
+            sleep(wait)
             self._last_cmd_wait = 0
         self._pulse_enable()
         if low_bits:
@@ -208,9 +220,6 @@ class GPIOLCDDisplay(Display):
             pin.value = bit
 
     def _pulse_enable(self) -> None:
-        """Note: this is called often when printing, to avoid too much context switching
-        and slowing down display printing this is done synchronously.
-        """
         assert self._pins
         self._pins.enable.value = True
         # Wait more than 450ns.
@@ -233,7 +242,7 @@ def remove_accents(text: str) -> str:
 
 
 async def debug():
-    async with GPIOLCDDisplay(
+    lcd = GPIOLCDDisplay(
         LCDConfig(
             pins=LCDPinConfig(
                 register_select=int(input("pin register select: ")),
@@ -244,9 +253,13 @@ async def debug():
                 data_7=int(input("pin data 7: ")),
             )
         )
-    ) as lcd:
+    )
+    await lcd.init()
+    try:
         while True:
             await lcd._display(input("message: "))
+    finally:
+        await lcd.stop()
 
 
 if __name__ == "__main__":
