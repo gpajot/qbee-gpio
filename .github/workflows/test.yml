@@ -20,12 +20,12 @@ jobs:
         with:
           version: "0.9.x"
       - name: Install dependencies
-        run: uv sync --locked --all-extras
+        run: uv sync --locked
       - name: Run format
         run: uv run --locked ruff format --check .
       - name: Run lint
         run: uv run --locked ruff check .
-      - name: Run mypy
-        run: uv run --locked mypy .
+      - name: Run type check
+        run: uv run --locked ty check
       - name: Run tests
         run: uv run --locked pytest -v

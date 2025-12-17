@@ -1,7 +1,8 @@
 import asyncio
 import logging
+from collections.abc import Awaitable, Callable
 from functools import partial
-from typing import TYPE_CHECKING, Awaitable, Callable, Self
+from typing import TYPE_CHECKING, Self
 
 from concurrent_tasks import RobustStream, TaskPool
 from pydantic import BaseModel
