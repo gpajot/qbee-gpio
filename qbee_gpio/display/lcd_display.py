@@ -1,8 +1,9 @@
 import asyncio
 import unicodedata
+from collections.abc import Callable, Sequence
 from functools import partial
 from time import monotonic, sleep
-from typing import Callable, Literal, Sequence, cast
+from typing import Literal, cast
 
 from gpiozero import OutputDevice
 from pydantic import BaseModel
