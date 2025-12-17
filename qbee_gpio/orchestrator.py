@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class Session:
     source: Source
     song: Song | None = None
-    playing: Playing = Playing(False)
+    playing: Playing | None = None
 
 
 class QbeeOrchestrator(AsyncExitStack):
@@ -50,7 +50,7 @@ class QbeeOrchestrator(AsyncExitStack):
         return self
 
     async def _process(self, event: Event) -> None:
-        if not self._session:
+        if not self._session or self._session.source != event.source:
             self._session = Session(event.source)
         match event.data:
             case Playing():
@@ -73,5 +73,7 @@ class QbeeOrchestrator(AsyncExitStack):
                     logger.debug("now playing: %r", event.data)
                     self._session.song = event.data
                     if self._display:
+                        # Display might not be initialized yet, song will be displayed
+                        # when start playing event is received.
                         with contextlib.suppress(RuntimeError):
                             await self._display.display_now_playing(event.data)
