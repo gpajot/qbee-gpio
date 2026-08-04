@@ -11,7 +11,7 @@ authors = [
 urls = { repository = "https://github.com/gpajot/qbee-gpio" }
 dependencies = [
     "concurrent-tasks ==1.16.3",
-    "gpiozero ==2.0.1",
+    "gpiozero==2.0.1.post3",
     "zenconfig[yaml,pydantic] ==2.2.0",
 ]
 license-files = ["LICENSE"]
