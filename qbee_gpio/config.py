@@ -1,5 +1,11 @@
-import zenconfig
-from pydantic import BaseModel, Field
+from typing import ClassVar
+
+from pydantic import Field
+from pydantic_settings import (
+    BaseSettings,
+    PydanticBaseSettingsSource,
+    YamlConfigSettingsSource,
+)
 
 from qbee_gpio.display import DisplayConfig
 from qbee_gpio.events import UDPServerConfig
@@ -7,7 +13,7 @@ from qbee_gpio.mqtt import MQTTConfig
 from qbee_gpio.power import PowerConfig
 
 
-class QbeeConfig(BaseModel, zenconfig.Config):
+class QbeeConfig(BaseSettings):
     udp: UDPServerConfig = UDPServerConfig()
     mqtt: MQTTConfig = MQTTConfig()
     power: PowerConfig | None = None
@@ -35,3 +41,16 @@ class QbeeConfig(BaseModel, zenconfig.Config):
             },
         }
     )
+
+    YAML_FILE: ClassVar[str] = ""
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        *_,
+        **__,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        if not cls.YAML_FILE:
+            raise ValueError("no config path provided")
+        return (YamlConfigSettingsSource(settings_cls, yaml_file=cls.YAML_FILE),)
