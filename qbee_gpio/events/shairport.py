@@ -12,7 +12,11 @@ class _Song(TypedDict):
 _SONG: _Song = {}
 
 
-def parse(data: bytes) -> Event | None:
+def _song_is_complete() -> bool:
+    return set(_SONG.keys()) == {"artist", "album", "title"}
+
+
+def parse_udp(data: bytes) -> Event | None:
     """Data is sent by type so we need to process a full batch of messages to have the complete stuff."""
     global _SONG
     if data == b"ssncpbeg":
@@ -31,4 +35,17 @@ def parse(data: bytes) -> Event | None:
         s = Song(**_SONG)
         _SONG = {}
         return Event("shairport", s)
+    return None
+
+
+def parse_mqtt(topic: str, data: str) -> Event | None:
+    global _SONG
+    if topic == "playing":
+        return Event("shairport", Playing(data == "1"))
+    elif topic in {"artist", "album", "title"}:
+        _SONG[topic] = data
+        if set(_SONG.keys()) == {"artist", "album", "title"}:
+            s = Song(**_SONG)
+            _SONG = {}
+            return Event("shairport", s)
     return None

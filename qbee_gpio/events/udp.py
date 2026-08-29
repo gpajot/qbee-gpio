@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 from qbee_gpio.events.interface import Event
 from qbee_gpio.events.librespot import parse as _parse_librespot
-from qbee_gpio.events.shairport import parse as _parse_shairport
+from qbee_gpio.events.shairport import parse_udp as _parse_shairport
 
 logger = logging.getLogger(__name__)
 
@@ -21,12 +21,12 @@ def _parse(data: bytes) -> Event | None:
 
 
 class UDPServerConfig(BaseModel):
-    host: str = "0.0.0.0"
+    host: str | None = None
     port: int = 8000
     timeout: float = 5
 
 
-class EventsServer(RobustStream, asyncio.DatagramProtocol):
+class UDPEventsServer(RobustStream, asyncio.DatagramProtocol):
     """Receive events defining sound activity and song information."""
 
     def __init__(
@@ -37,23 +37,26 @@ class EventsServer(RobustStream, asyncio.DatagramProtocol):
         super().__init__(
             connector=partial(
                 asyncio.get_running_loop().create_datagram_endpoint,
-                local_addr=(config.host, config.port),
+                local_addr=(config.host, config.port) if config.host else None,
             ),
             name="udp-events",
             timeout=config.timeout,
         )
+        self._enabled = bool(config.host)
         self._pool = TaskPool(size=1, timeout=config.timeout)
 
         self._process = process
 
     async def __aenter__(self) -> Self:
-        await self._pool.__aenter__()
-        await super().__aenter__()
+        if self._enabled:
+            await self._pool.__aenter__()
+            await super().__aenter__()
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await super().__aexit__(exc_type, exc_val, exc_tb)
-        await self._pool.__aexit__(exc_type, exc_val, exc_tb)
+        if self._enabled:
+            await super().__aexit__(exc_type, exc_val, exc_tb)
+            await self._pool.__aexit__(exc_type, exc_val, exc_tb)
 
     def datagram_received(self, data: bytes, addr: tuple[str, int]) -> None:
         if event := _parse(data):

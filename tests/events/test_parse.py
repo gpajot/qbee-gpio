@@ -1,7 +1,7 @@
 import pytest
 
 from qbee_gpio.events.interface import Event, Playing
-from qbee_gpio.events.server import _parse
+from qbee_gpio.events.udp import _parse
 
 
 @pytest.fixture
