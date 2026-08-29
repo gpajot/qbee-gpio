@@ -11,12 +11,12 @@ def process(mocker):
 
 @pytest.fixture
 async def events(process):
-    return UDPEventsServer(UDPServerConfig(), process)
+    return UDPEventsServer(UDPServerConfig(host="0.0.0.0"), process)
 
 
 async def test_process_event(mocker, events, process):
     mocker.patch(
-        "qbee_gpio.events.server._parse",
+        "qbee_gpio.events.udp._parse",
         return_value=Event("librespot", Playing(True)),
     )
     async with events:
@@ -26,7 +26,7 @@ async def test_process_event(mocker, events, process):
 
 async def test_process_none(mocker, events, process):
     mocker.patch(
-        "qbee_gpio.events.server._parse",
+        "qbee_gpio.events.udp._parse",
         return_value=None,
     )
     async with events:

@@ -7,7 +7,7 @@ from qbee_gpio.events.udp import _parse
 @pytest.fixture
 def _parse_librespot(mocker):
     mocker.patch(
-        "qbee_gpio.events.server._parse_librespot",
+        "qbee_gpio.events.udp._parse_librespot",
         new=lambda m: Event("librespot", Playing(bool(m))),
     )
 
@@ -15,7 +15,7 @@ def _parse_librespot(mocker):
 @pytest.fixture
 def _parse_shairport(mocker):
     mocker.patch(
-        "qbee_gpio.events.server._parse_shairport",
+        "qbee_gpio.events.udp._parse_shairport",
         new=lambda m: Event("shairport", Playing(bool(m))),
     )
 

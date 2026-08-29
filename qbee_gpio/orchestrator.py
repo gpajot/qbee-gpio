@@ -37,10 +37,7 @@ class QbeeOrchestrator(AsyncExitStack):
 
     def __init__(self, config: QbeeConfig):
         super().__init__()
-        self._udp_events = UDPEventsServer(
-            config.udp,
-            self._process,
-        )
+        self._udp_events = UDPEventsServer(config.udp, self._process)
         self._mqtt_events = MQTTEventsServer(config.mqtt, self._process)
         self._power = Power(config.power) if config.power else None
         self._display = config.display.get_display()

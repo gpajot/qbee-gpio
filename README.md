@@ -30,8 +30,7 @@ docker run -d \
   gpajot/qbee-gpio:latest
 ```
 
-This expects a config file located at `~/qbee/conf.yaml`.
-See [all config options](./qbee_gpio/config.py)
+This expects a config file located at `~/qbee/conf.yaml`. See [all config options](./qbee_gpio/config.py)
 
 A typical config would look like:
 
@@ -49,3 +48,21 @@ display:
       enable: 24
       register_select: 23
 ```
+
+### Metadata display
+
+To enable reception of metadata:
+
+```yaml
+udp:
+  host: "0.0.0.0"
+```
+
+to enable UDB metadata (librespot and/or shairport)
+
+```yaml
+mqtt:
+  hostname: ...
+```
+
+to enable MQTT metadata (shairport)
