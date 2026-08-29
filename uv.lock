@@ -231,6 +231,25 @@ wheels = [
 ]
 
 [[package]]
+name = "pydantic-settings"
+version = "2.15.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pydantic" },
+    { name = "python-dotenv" },
+    { name = "typing-inspection" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/68/ca/31c57507b13119d7d3cfa1576dad2911a4861e3be07b579395f4e9d393f9/pydantic_settings-2.15.0.tar.gz", hash = "sha256:694b793e84f766ba76a90ebdefc01d0a9a045dab0382bee70393da93712ad117", size = 261253, upload-time = "2026-08-07T09:24:57.419Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/30/a4/2bffa9f8e804325a09867f0e9d30795c80ea9f8d62560bd1b6ad6220eb2f/pydantic_settings-2.15.0-py3-none-any.whl", hash = "sha256:0ba092c291c94baceb5eff768aa0d56400a457585bc0175925a5a5510303da42", size = 69413, upload-time = "2026-08-07T09:24:55.839Z" },
+]
+
+[package.optional-dependencies]
+yaml = [
+    { name = "pyyaml" },
+]
+
+[[package]]
 name = "pygments"
 version = "2.21.0"
 source = { registry = "https://pypi.org/simple" }
@@ -292,6 +311,15 @@ wheels = [
 ]
 
 [[package]]
+name = "python-dotenv"
+version = "1.2.3"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/6a/53/ed9d74092561d4b01a2ef1349d52cdbc135e526c245f366b089cfca6de49/python_dotenv-1.2.3.tar.gz", hash = "sha256:a20a594dabeaa385725aa239d5244871c143ecb356add8a20fcf23773a6c3a35", size = 58945, upload-time = "2026-08-16T16:54:54.067Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0d/17/c5c6b53ddc18f297992099b3d9ec16c855c0ccc83263a21fe4d1c625ec6c/python_dotenv-1.2.3-py3-none-any.whl", hash = "sha256:904552145e8bfed22162c09dab1c2b9b54fefa7b23ba780f4f26ca0316b0f0d9", size = 22780, upload-time = "2026-08-16T16:54:52.473Z" },
+]
+
+[[package]]
 name = "pyyaml"
 version = "6.0.3"
 source = { registry = "https://pypi.org/simple" }
@@ -325,7 +353,7 @@ dependencies = [
     { name = "aiomqtt", marker = "python_full_version < '4'" },
     { name = "concurrent-tasks" },
     { name = "gpiozero" },
-    { name = "zenconfig", extra = ["pydantic", "yaml"] },
+    { name = "pydantic-settings", extra = ["yaml"] },
 ]
 
 [package.dev-dependencies]
@@ -343,7 +371,7 @@ requires-dist = [
     { name = "aiomqtt", marker = "python_full_version < '4'", specifier = "==2.5.1" },
     { name = "concurrent-tasks", specifier = "==1.16.3" },
     { name = "gpiozero", specifier = "==2.0.1.post3" },
-    { name = "zenconfig", extras = ["yaml", "pydantic"], specifier = "==2.2.0" },
+    { name = "pydantic-settings", extras = ["yaml"], specifier = "==2.15.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -449,24 +477,4 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/79/41/c3f34799487924f2a6f43b8a8b7acd345a6c61aac2211d4bced8621ca4f1/virtualenv-21.7.7.tar.gz", hash = "sha256:6874376f99ba6b8d4e3ee8bde67f9285412400c7d5b29ba41ee6daa5e0221bdc", size = 5347022, upload-time = "2026-08-28T18:59:50.093Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/95/f8/dcec8dc767b812193316c7debed1e2b53e586e59c267bfe517688ff90275/virtualenv-21.7.7-py3-none-any.whl", hash = "sha256:67a6a68fef3ad8ca16b8b89f33fd8f97996cc0bf0db31629d07ecf8dec539a2c", size = 5324620, upload-time = "2026-08-28T18:59:48.056Z" },
-]
-
-[[package]]
-name = "zenconfig"
-version = "2.2.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "typing-extensions" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/1d/bb/969caeead72816d4036597ef76dc0254010c170689ddd5a82dd24839d8ba/zenconfig-2.2.0.tar.gz", hash = "sha256:f5c8b7470c2288fe3c44af50b83552f659380479834247a670ea3b9fc95d888e", size = 7890, upload-time = "2025-10-17T07:49:25.122Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/56/b9/1336db716ebb4b7964f3bc8344134f16b739e47c933c72dbe210b0469ed2/zenconfig-2.2.0-py3-none-any.whl", hash = "sha256:dffc90a4ad8a89654bed617383227ef59b7be0bc913e5254faa243df5eca0303", size = 13342, upload-time = "2025-10-17T07:49:23.721Z" },
-]
-
-[package.optional-dependencies]
-pydantic = [
-    { name = "pydantic" },
-]
-yaml = [
-    { name = "pyyaml" },
 ]
