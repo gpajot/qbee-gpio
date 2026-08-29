@@ -1,12 +1,24 @@
 from unittest.mock import call
 
 import pytest
+from pydantic_settings import BaseSettings, PydanticBaseSettingsSource
 
 from qbee_gpio.config import QbeeConfig
 from qbee_gpio.display import Display
 from qbee_gpio.events import Event, Playing, Song
 from qbee_gpio.orchestrator import QbeeOrchestrator, Session
 from qbee_gpio.power import Power, PowerConfig
+
+
+class QbeeTestConfig(QbeeConfig):
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        *args,
+        **kwargs,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        return BaseSettings.settings_customise_sources(settings_cls, *args, **kwargs)
 
 
 @pytest.fixture
@@ -47,7 +59,7 @@ async def _send_events(orchestrator):
 async def test_with_only_power(get_display, power):
     get_display.return_value = None
     async with QbeeOrchestrator(
-        QbeeConfig(power=PowerConfig(pin_on=1, pin_standby=2))
+        QbeeTestConfig(power=PowerConfig(pin_on=1, pin_standby=2))
     ) as orchestrator:
         assert orchestrator._display is None
         await _send_events(orchestrator)
@@ -59,7 +71,7 @@ async def test_with_only_power(get_display, power):
 
 async def test_with_only_display(get_display, display):
     get_display.return_value = display
-    async with QbeeOrchestrator(QbeeConfig()) as orchestrator:
+    async with QbeeOrchestrator(QbeeTestConfig()) as orchestrator:
         assert orchestrator._power is None
         await _send_events(orchestrator)
     assert display.init.call_count == 2
@@ -70,7 +82,7 @@ async def test_with_only_display(get_display, display):
 async def test_full(get_display, display, power):
     get_display.return_value = display
     async with QbeeOrchestrator(
-        QbeeConfig(power=PowerConfig(pin_on=1, pin_standby=2))
+        QbeeTestConfig(power=PowerConfig(pin_on=1, pin_standby=2))
     ) as orchestrator:
         await _send_events(orchestrator)
     assert power.process_playing.call_args_list == [

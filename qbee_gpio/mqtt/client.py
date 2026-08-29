@@ -88,7 +88,7 @@ class MQTTClient(contextlib.AsyncExitStack):
                     logger.warning("could not connect, retrying...", exc_info=True)
         self._connected.set()
         logger.info("connected to mqtt")
-        await self.subscribe(self._shairport_topic)
+        await self.subscribe(f"{self._shairport_topic}/#")
 
     async def _reconnect(self) -> None:
         if not self._closed and self._connected.is_set():
