@@ -1,7 +1,7 @@
 import pytest
 
 from qbee_gpio.events.interface import Event, Playing
-from qbee_gpio.events.server import EventsServer, UDPServerConfig
+from qbee_gpio.events.udp import UDPEventsServer, UDPServerConfig
 
 
 @pytest.fixture
@@ -11,7 +11,7 @@ def process(mocker):
 
 @pytest.fixture
 async def events(process):
-    return EventsServer(UDPServerConfig(), process)
+    return UDPEventsServer(UDPServerConfig(), process)
 
 
 async def test_process_event(mocker, events, process):

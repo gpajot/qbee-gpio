@@ -4,7 +4,14 @@ from contextlib import AsyncExitStack
 from dataclasses import dataclass
 
 from qbee_gpio.config import QbeeConfig
-from qbee_gpio.events import Event, EventsServer, Playing, Song, Source
+from qbee_gpio.events import (
+    Event,
+    MQTTEventsServer,
+    Playing,
+    Song,
+    Source,
+    UDPEventsServer,
+)
 from qbee_gpio.power import Power
 
 logger = logging.getLogger(__name__)
@@ -30,10 +37,11 @@ class QbeeOrchestrator(AsyncExitStack):
 
     def __init__(self, config: QbeeConfig):
         super().__init__()
-        self._udp_events = EventsServer(
+        self._udp_events = UDPEventsServer(
             config.udp,
             self._process,
         )
+        self._mqtt_events = MQTTEventsServer(config.mqtt, self._process)
         self._power = Power(config.power) if config.power else None
         self._display = config.display.get_display()
 
@@ -47,6 +55,7 @@ class QbeeOrchestrator(AsyncExitStack):
             await self._display.stop()
             self.push_async_callback(self._display.stop)
         await self.enter_async_context(self._udp_events)
+        await self.enter_async_context(self._mqtt_events)
         return self
 
     async def _process(self, event: Event) -> None:

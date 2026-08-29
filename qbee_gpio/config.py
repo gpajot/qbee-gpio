@@ -3,11 +3,13 @@ from pydantic import BaseModel, Field
 
 from qbee_gpio.display import DisplayConfig
 from qbee_gpio.events import UDPServerConfig
+from qbee_gpio.mqtt import MQTTConfig
 from qbee_gpio.power import PowerConfig
 
 
 class QbeeConfig(BaseModel, zenconfig.Config):
     udp: UDPServerConfig = UDPServerConfig()
+    mqtt: MQTTConfig = MQTTConfig()
     power: PowerConfig | None = None
     display: DisplayConfig = DisplayConfig()
     logging: dict = Field(
