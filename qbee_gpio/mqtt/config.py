@@ -4,7 +4,6 @@ from qbee_gpio.mqtt.backoff import SequenceBackoff
 
 
 class MQTTConfig(BaseModel):
-    shairport_topic: str = "shairport"
     hostname: str | None = None
     port: int = 1883
     username: str | None = None

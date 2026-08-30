@@ -8,7 +8,7 @@ from pydantic_settings import (
 )
 
 from qbee_gpio.display import DisplayConfig
-from qbee_gpio.events import UDPServerConfig
+from qbee_gpio.events import EventsMQTTConfig, UDPServerConfig
 from qbee_gpio.mqtt import MQTTConfig
 from qbee_gpio.power import PowerConfig
 
@@ -16,6 +16,7 @@ from qbee_gpio.power import PowerConfig
 class QbeeConfig(BaseSettings):
     udp: UDPServerConfig = UDPServerConfig()
     mqtt: MQTTConfig = MQTTConfig()
+    events_mqtt: EventsMQTTConfig = EventsMQTTConfig()
     power: PowerConfig | None = None
     display: DisplayConfig = DisplayConfig()
     logging: dict = Field(

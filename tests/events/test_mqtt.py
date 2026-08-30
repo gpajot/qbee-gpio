@@ -1,8 +1,8 @@
 import pytest
 
 from qbee_gpio.events.interface import Event, Playing
-from qbee_gpio.events.mqtt import MQTTEventsServer
-from qbee_gpio.mqtt import MQTTConfig
+from qbee_gpio.events.mqtt import EventsMQTTConfig, MQTTEventsServer
+from qbee_gpio.mqtt import MQTTClient
 
 
 @pytest.fixture
@@ -11,19 +11,24 @@ def process(mocker):
 
 
 @pytest.fixture
-async def events(process):
-    return MQTTEventsServer(MQTTConfig(), process)
+def mqtt_client(mocker):
+    return mocker.Mock(spec=MQTTClient)
+
+
+@pytest.fixture
+async def events(process, mqtt_client):
+    return MQTTEventsServer(EventsMQTTConfig(), mqtt_client, process)
 
 
 async def test_process_shairport(mocker, events, process):
     mocker.patch(
-        "qbee_gpio.events.mqtt._parse_shairport",
+        "qbee_gpio.events.mqtt.shairport.parse_mqtt",
         return_value=Event("shairport", Playing(True)),
     )
-    await events.on_receive("shairport/playing", "1")
+    await events._on_receive("shairport/playing", "1")
     process.assert_called_once_with(Event("shairport", Playing(True)))
 
 
 async def test_process_none(events, process):
-    await events.on_receive("other/playing", "1")
+    await events._on_receive("other/playing", "1")
     process.assert_not_called()
