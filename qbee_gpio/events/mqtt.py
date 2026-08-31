@@ -32,7 +32,7 @@ class MQTTEventsServer(AbstractAsyncContextManager):
     async def __aenter__(self) -> Self:
         await self._client.subscribe(
             tuple(
-                f"{self._config.shairport_topic}/${topic}"
+                f"{self._config.shairport_topic}/{topic}"
                 for topic in shairport.MQTT_TOPICS
             ),
             self._on_receive,
