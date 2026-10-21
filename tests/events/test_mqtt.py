@@ -1,7 +1,7 @@
 import pytest
 
 from qbee_gpio.events.interface import Event, Playing
-from qbee_gpio.events.mqtt import EventsMQTTConfig, MQTTEventsServer
+from qbee_gpio.events.mqtt import MQTTEvents, MQTTEventsConfig
 from qbee_gpio.mqtt import MQTTClient
 
 
@@ -17,7 +17,7 @@ def mqtt_client(mocker):
 
 @pytest.fixture
 async def events(process, mqtt_client):
-    return MQTTEventsServer(EventsMQTTConfig(), mqtt_client, process)
+    return MQTTEvents(MQTTEventsConfig(), mqtt_client, process)
 
 
 async def test_process_shairport(mocker, events, process):

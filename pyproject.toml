@@ -1,19 +1,20 @@
 [project]
 name = "qbee_gpio"
-version = "4.2.2"
+version = "4.3.0"
 description = "Control a display and amplifier relay for use in an AirPlay and/or Spotify Connect Raspberry Pi server."
 license = "MIT"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.11,<3.15"
 authors = [
     { name = "Gabriel Pajot", email = "gab@lescactus.eu" },
 ]
 urls = { repository = "https://github.com/gpajot/qbee-gpio" }
 dependencies = [
     "aiomqtt ==2.5.1 ; python_version < '4'",
-    "concurrent-tasks ==1.16.3",
+    "asyncinotify ==4.4.4",
+    "concurrent-tasks ==1.18.0",
     "gpiozero==2.0.1.post3",
-    "pydantic-settings[yaml]==2.15.0",
+    "pydantic-settings[yaml]==2.16.1",
 ]
 license-files = ["LICENSE"]
 
@@ -22,10 +23,13 @@ dev = [
     "pre-commit==4.7.0",
     "pytest==9.1.1",
     "pytest-asyncio==1.4.0",
-    "pytest-mock==3.16.0",
+    "pytest-mock==3.17.0",
     "ruff==0.17.1",
-    "ty==0.0.86",
+    "ty==0.0.90",
 ]
+
+[project.scripts]
+qbee-gpio = "qbee_gpio.main:main"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
@@ -43,7 +47,6 @@ unused-ignore-comment = "warn"
 
 [tool.ty.terminal]
 error-on-warning = true
-
 [build-system]
-requires = ["uv_build>=0.13.0,<0.14"]
+requires = ["uv_build>=0.13.4,<0.14"]
 build-backend = "uv_build"

@@ -12,16 +12,16 @@ from qbee_gpio.mqtt import MQTTClient
 logger = logging.getLogger(__name__)
 
 
-class EventsMQTTConfig(BaseModel):
+class MQTTEventsConfig(BaseModel):
     shairport_topic: str = "shairport"
 
 
-class MQTTEventsServer(AbstractAsyncContextManager):
+class MQTTEvents(AbstractAsyncContextManager):
     """Receive events defining sound activity and song information."""
 
     def __init__(
         self,
-        config: EventsMQTTConfig,
+        config: MQTTEventsConfig,
         client: MQTTClient,
         process: Callable[[Event], Awaitable],
     ):
