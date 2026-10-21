@@ -1,7 +1,8 @@
 # qbee-gpio
 
 [![tests](https://github.com/gpajot/qbee-gpio/actions/workflows/test.yml/badge.svg?branch=main&event=push)](https://github.com/gpajot/qbee-gpio/actions/workflows/test.yml?query=branch%3Amain+event%3Apush)
-[![DockerHub](https://img.shields.io/docker/v/gpajot/qbee-gpio/latest)](https://hub.docker.com/r/gpajot/qbee-gpio)
+[![PyPI Version](https://img.shields.io/pypi/v/qbee_gpio)](https://pypi.org/project/qbee_gpio/)
+[![Docker Image Version (tag)](https://img.shields.io/docker/v/gpajot/qbee-gpio/latest?label=DockerHub)](https://hub.docker.com/r/gpajot/qbee-gpio)
 
 A docker image to control an LCD and amplifier relay for use in an AirPlay and/or Spotify Connect Raspberry Pi server.
 

@@ -3,7 +3,7 @@ import unicodedata
 from collections.abc import Callable, Sequence
 from functools import partial
 from time import monotonic, sleep
-from typing import Literal, cast
+from typing import Literal, ParamSpec, TypeAlias, TypeVar, cast
 
 from gpiozero import OutputDevice
 from pydantic import BaseModel
@@ -11,8 +11,10 @@ from pydantic import BaseModel
 from qbee_gpio.display.interface import Display
 from qbee_gpio.events import Song
 
-type Bit = Literal[0, 1]
-type HalfByte = tuple[Bit, Bit, Bit, Bit]
+P = ParamSpec("P")
+R = TypeVar("R")
+Bit: TypeAlias = Literal[0, 1]
+HalfByte: TypeAlias = tuple[Bit, Bit, Bit, Bit]
 
 
 class LCDPinConfig(BaseModel):
@@ -72,7 +74,7 @@ class GPIOLCDDisplay(Display):
         self._last_cmd_start = 0.0
         self._last_cmd_wait = 0.0
 
-    async def _exec[**P, R](
+    async def _exec(
         self,
         func: Callable[P, R],
         *args: P.args,

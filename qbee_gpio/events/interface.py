@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, TypeAlias
 
 
 @dataclass(kw_only=True, frozen=True)
@@ -12,7 +12,7 @@ class Song:
 class Playing(int): ...
 
 
-type Source = Literal["librespot", "shairport"]
+Source: TypeAlias = Literal["unknown", "librespot", "shairport"]
 
 
 @dataclass(frozen=True)

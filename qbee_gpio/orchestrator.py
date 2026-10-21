@@ -6,7 +6,8 @@ from dataclasses import dataclass
 from qbee_gpio.config import QbeeConfig
 from qbee_gpio.events import (
     Event,
-    MQTTEventsServer,
+    InotifyEvents,
+    MQTTEvents,
     Playing,
     Song,
     Source,
@@ -40,9 +41,10 @@ class QbeeOrchestrator(AsyncExitStack):
         super().__init__()
         self._mqtt_client = MQTTClient(config.mqtt)
         self._udp_events = UDPEventsServer(config.udp, self._process)
-        self._mqtt_events = MQTTEventsServer(
+        self._mqtt_events = MQTTEvents(
             config.events_mqtt, self._mqtt_client, self._process
         )
+        self._inotify_events = InotifyEvents(config.inotify, self._process)
         self._power = Power(config.power) if config.power else None
         self._display = config.display.get_display()
 
@@ -58,6 +60,7 @@ class QbeeOrchestrator(AsyncExitStack):
         await self.enter_async_context(self._mqtt_client)
         await self.enter_async_context(self._udp_events)
         await self.enter_async_context(self._mqtt_events)
+        self.enter_context(self._inotify_events)
         return self
 
     async def _process(self, event: Event) -> None:

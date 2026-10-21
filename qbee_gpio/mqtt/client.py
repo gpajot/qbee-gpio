@@ -3,7 +3,7 @@ import contextlib
 import functools
 import logging
 from collections.abc import Awaitable, Callable, Collection, Coroutine
-from typing import Any, Concatenate
+from typing import Any, Concatenate, ParamSpec, TypeAlias, TypeVar
 
 import aiomqtt
 from concurrent_tasks import BackgroundTask
@@ -12,11 +12,14 @@ from qbee_gpio.mqtt.config import MQTTConfig
 
 logger = logging.getLogger(__name__)
 
-type RobustFunc[**P, R] = Callable[Concatenate[MQTTClient, P], Coroutine[Any, Any, R]]
-type Callback = Callable[[str, str], Awaitable]
+P = ParamSpec("P")
+R = TypeVar("R")
+
+RobustFunc: TypeAlias = Callable[Concatenate["MQTTClient", P], Coroutine[Any, Any, R]]
+Callback: TypeAlias = Callable[[str, str], Awaitable]
 
 
-def _robust[**P, R](
+def _robust(
     error_message: str,
 ) -> Callable[[RobustFunc[P, R]], RobustFunc[P, R | None]]:
     def _outer(func: RobustFunc[P, R]) -> RobustFunc[P, R | None]:
