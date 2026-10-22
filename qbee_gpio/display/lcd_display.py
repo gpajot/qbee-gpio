@@ -71,8 +71,8 @@ class GPIOLCDDisplay(Display):
         self._pins: LCDPins | None = None
 
         self._lock = asyncio.Lock()
-        self._last_cmd_start = 0.0
-        self._last_cmd_wait = 0.0
+        self._last_inst_start = 0.0
+        self._last_inst_wait = 0.0
 
     async def _exec(
         self,
@@ -97,12 +97,12 @@ class GPIOLCDDisplay(Display):
         self._write(
             (0, 0, 1, 1),
             # Wait more than 4.1ms here as per specs.
-            wait_for=0.005,
+            wait_for=0.006,
         )
         self._write(
             (0, 0, 1, 1),
             # Wait more than 100µs here as per specs.
-            wait_for=0.00011,
+            wait_for=0.0002,
         )
         self._write((0, 0, 1, 1))
         # Now switch to 4-bit.
@@ -197,25 +197,24 @@ class GPIOLCDDisplay(Display):
         self,
         high_bits: HalfByte,
         low_bits: HalfByte | None = None,
+        *,
         is_cmd: bool = True,
-        wait_for: float | None = None,
+        # Wait for more than 37µs unless otherwise specified.
+        wait_for: float = 0.0001,
     ) -> None:
         assert self._pins
         self._pins.register_select.value = not is_cmd
         self._send_half_byte(high_bits)
-        # Wait until enough time has passed for the previous command to be taken into account.
-        if (wait := self._last_cmd_wait - (monotonic() - self._last_cmd_start)) > 0:
+        # Wait until enough time has passed for the previous instruction to be taken into account.
+        if (wait := self._last_inst_wait - (monotonic() - self._last_inst_start)) > 0:
             sleep(wait)
-            self._last_cmd_wait = 0
         self._pulse_enable()
         if low_bits:
             self._send_half_byte(low_bits)
             self._pulse_enable()
-        if is_cmd:
-            # Mark the start of the command.
-            self._last_cmd_start = monotonic()
-            # Wait for more than 37µs unless otherwise specified.
-            self._last_cmd_wait = wait_for or 0.0001
+        # Mark the start of the instruction.
+        self._last_inst_start = monotonic()
+        self._last_inst_wait = wait_for
 
     def _send_half_byte(self, bits: HalfByte) -> None:
         assert self._pins
