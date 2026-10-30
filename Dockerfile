@@ -1,4 +1,4 @@
-FROM python:3.14 AS lgpio-builder
+FROM python:3.15 AS lgpio-builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends swig
 
@@ -11,7 +11,7 @@ RUN --mount=from=ghcr.io/astral-sh/uv:0.13,source=/uv,target=/bin/uv \
     && make -C lg-master install \
     && PYPI=1 uvx --from build pyproject-build --installer uv --outdir /wheels --wheel lg-master/PY_LGPIO
 
-FROM dhi.io/python:3.14-dev AS python-builder-base
+FROM dhi.io/python:3.15-dev AS python-builder-base
 
 WORKDIR /app
 RUN --mount=from=ghcr.io/astral-sh/uv:0.13,source=/uv,target=/bin/uv \
@@ -25,7 +25,7 @@ RUN --mount=from=ghcr.io/astral-sh/uv:0.13,source=/uv,target=/bin/uv \
     --mount=from=lgpio-builder,source=/wheels,target=/wheels \
     find /wheels -name '*.whl' -exec uv pip install --compile-bytecode lgpio@{} \;
 
-FROM dhi.io/python:3.14
+FROM dhi.io/python:3.15
 
 WORKDIR /app
 COPY --from=python-builder-base /app/.venv .venv/
