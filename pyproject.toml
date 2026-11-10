@@ -14,7 +14,7 @@ dependencies = [
     "asyncinotify ==4.4.4",
     "concurrent-tasks ==1.18.0",
     "gpiozero==2.0.1.post3",
-    "pydantic-settings[yaml]==2.16.1",
+    "pydantic-settings[yaml]==2.16.2",
 ]
 license-files = ["LICENSE"]
 
