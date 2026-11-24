@@ -24,7 +24,7 @@ dev = [
     "pytest-asyncio==1.5.0",
     "pytest-mock==3.17.0",
     "ruff==0.17.5",
-    "ty==0.0.95",
+    "ty==0.0.107",
 ]
 
 [project.scripts]
